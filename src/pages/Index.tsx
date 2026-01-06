@@ -6,6 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+
+type CarSkin = {
+  id: string;
+  name: string;
+  color: string;
+  price: number;
+  unlocked: boolean;
+};
 
 type Car = {
   id: string;
@@ -18,6 +28,9 @@ type Car = {
   maxAcceleration: number;
   price: number;
   unlocked: boolean;
+  category: 'russian' | 'premium';
+  skins: CarSkin[];
+  selectedSkin: string;
 };
 
 type Achievement = {
@@ -35,6 +48,17 @@ type LeaderboardEntry = {
   car: string;
 };
 
+type Player = {
+  id: string;
+  name: string;
+  car: string;
+  position: { x: number; y: number };
+  rotation: number;
+  speed: number;
+  score: number;
+  skin: string;
+};
+
 type GameState = {
   cars: Car[];
   credits: number;
@@ -45,6 +69,7 @@ type GameState = {
     sensitivity: number;
   };
   achievements: Achievement[];
+  playerName: string;
 };
 
 const INITIAL_CARS: Car[] = [
@@ -59,6 +84,13 @@ const INITIAL_CARS: Car[] = [
     maxAcceleration: 100,
     price: 0,
     unlocked: true,
+    category: 'russian',
+    selectedSkin: 'default',
+    skins: [
+      { id: 'default', name: 'Стандарт', color: '#00f0ff', price: 0, unlocked: true },
+      { id: 'military', name: 'Военный', color: '#4a5a3e', price: 1000, unlocked: false },
+      { id: 'safari', name: 'Сафари', color: '#d4a574', price: 1500, unlocked: false },
+    ],
   },
   {
     id: 'lada',
@@ -71,6 +103,14 @@ const INITIAL_CARS: Car[] = [
     maxAcceleration: 100,
     price: 2000,
     unlocked: true,
+    category: 'russian',
+    selectedSkin: 'default',
+    skins: [
+      { id: 'default', name: 'Белая', color: '#ffffff', price: 0, unlocked: true },
+      { id: 'cherry', name: 'Вишнёвая', color: '#8b0000', price: 800, unlocked: false },
+      { id: 'taxi', name: 'Такси', color: '#ffeb3b', price: 1200, unlocked: false },
+      { id: 'police', name: 'Полиция', color: '#2196f3', price: 2000, unlocked: false },
+    ],
   },
   {
     id: 'zhiguli',
@@ -83,6 +123,13 @@ const INITIAL_CARS: Car[] = [
     maxAcceleration: 100,
     price: 3500,
     unlocked: false,
+    category: 'russian',
+    selectedSkin: 'default',
+    skins: [
+      { id: 'default', name: 'Серебро', color: '#c0c0c0', price: 0, unlocked: true },
+      { id: 'gold', name: 'Золото', color: '#ffd700', price: 2500, unlocked: false },
+      { id: 'racing', name: 'Гоночная', color: '#ff0000', price: 3000, unlocked: false },
+    ],
   },
   {
     id: 'niva',
@@ -95,6 +142,13 @@ const INITIAL_CARS: Car[] = [
     maxAcceleration: 100,
     price: 4500,
     unlocked: false,
+    category: 'russian',
+    selectedSkin: 'default',
+    skins: [
+      { id: 'default', name: 'Зелёная', color: '#2e7d32', price: 0, unlocked: true },
+      { id: 'arctic', name: 'Арктика', color: '#e3f2fd', price: 2000, unlocked: false },
+      { id: 'desert', name: 'Пустыня', color: '#ffab91', price: 2500, unlocked: false },
+    ],
   },
   {
     id: 'vaz',
@@ -107,6 +161,73 @@ const INITIAL_CARS: Car[] = [
     maxAcceleration: 100,
     price: 6000,
     unlocked: false,
+    category: 'russian',
+    selectedSkin: 'default',
+    skins: [
+      { id: 'default', name: 'Синяя', color: '#1976d2', price: 0, unlocked: true },
+      { id: 'carbon', name: 'Карбон', color: '#212121', price: 3500, unlocked: false },
+      { id: 'neon', name: 'Неон', color: '#e91e63', price: 4000, unlocked: false },
+    ],
+  },
+  {
+    id: 'lamborghini',
+    name: 'Lamborghini Aventador',
+    speed: 300,
+    handling: 85,
+    acceleration: 95,
+    maxSpeed: 500,
+    maxHandling: 100,
+    maxAcceleration: 100,
+    price: 250000,
+    unlocked: false,
+    category: 'premium',
+    selectedSkin: 'default',
+    skins: [
+      { id: 'default', name: 'Оранжевая', color: '#ff6f00', price: 0, unlocked: true },
+      { id: 'matte', name: 'Матовая чёрная', color: '#424242', price: 10000, unlocked: false },
+      { id: 'chrome', name: 'Хром', color: '#b0bec5', price: 15000, unlocked: false },
+      { id: 'rainbow', name: 'Радуга', color: 'linear-gradient(90deg, #ff0000, #00ff00, #0000ff)', price: 25000, unlocked: false },
+    ],
+  },
+  {
+    id: 'bugatti',
+    name: 'Bugatti Chiron',
+    speed: 350,
+    handling: 90,
+    acceleration: 98,
+    maxSpeed: 500,
+    maxHandling: 100,
+    maxAcceleration: 100,
+    price: 300000,
+    unlocked: false,
+    category: 'premium',
+    selectedSkin: 'default',
+    skins: [
+      { id: 'default', name: 'Синяя', color: '#0d47a1', price: 0, unlocked: true },
+      { id: 'red', name: 'Красная', color: '#c62828', price: 12000, unlocked: false },
+      { id: 'gold', name: 'Золотая', color: '#f9a825', price: 20000, unlocked: false },
+      { id: 'carbon', name: 'Карбон', color: '#1a1a1a', price: 30000, unlocked: false },
+    ],
+  },
+  {
+    id: 'ferrari',
+    name: 'Ferrari F8 Tributo',
+    speed: 320,
+    handling: 88,
+    acceleration: 96,
+    maxSpeed: 500,
+    maxHandling: 100,
+    maxAcceleration: 100,
+    price: 350000,
+    unlocked: false,
+    category: 'premium',
+    selectedSkin: 'default',
+    skins: [
+      { id: 'default', name: 'Красная', color: '#d32f2f', price: 0, unlocked: true },
+      { id: 'yellow', name: 'Жёлтая', color: '#fbc02d', price: 15000, unlocked: false },
+      { id: 'white', name: 'Белая', color: '#fafafa', price: 18000, unlocked: false },
+      { id: 'black', name: 'Чёрная', color: '#000000', price: 22000, unlocked: false },
+    ],
   },
 ];
 
@@ -116,13 +237,15 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
   { id: '3', title: 'Король дрифта', description: 'Наберите 10000 очков за один дрифт', completed: false, icon: 'Crown' },
   { id: '4', title: 'Тюнер', description: 'Максимально улучшите любой автомобиль', completed: false, icon: 'Wrench' },
   { id: '5', title: 'Легенда', description: 'Займите 1 место в лидерборде', completed: false, icon: 'Star' },
-  { id: '6', title: 'Скорость света', description: 'Разгонитесь до 235 км/ч', completed: false, icon: 'Rocket' },
-  { id: '7', title: 'Миллионер', description: 'Заработайте 50000 рублей', completed: false, icon: 'BadgeDollarSign' },
+  { id: '6', title: 'Скорость света', description: 'Разгонитесь до 500 км/ч', completed: false, icon: 'Rocket' },
+  { id: '7', title: 'Миллионер', description: 'Заработайте 500000 рублей', completed: false, icon: 'BadgeDollarSign' },
+  { id: '8', title: 'Стилист', description: 'Купите все скины для одной машины', completed: false, icon: 'Palette' },
+  { id: '9', title: 'Премиум класс', description: 'Купите суперкар', completed: false, icon: 'Gem' },
 ];
 
 const Index = () => {
   const { toast } = useToast();
-  const [currentSection, setCurrentSection] = useState<'home' | 'garage' | 'city' | 'leaderboard' | 'achievements' | 'settings'>('city');
+  const [currentSection, setCurrentSection] = useState<'home' | 'garage' | 'city' | 'leaderboard' | 'achievements' | 'settings' | 'multiplayer'>('city');
   const [selectedCar, setSelectedCar] = useState<string>('lada');
   const [credits, setCredits] = useState(5000);
   const [totalEarnings, setTotalEarnings] = useState(0);
@@ -130,9 +253,18 @@ const Index = () => {
   const [currentDriftScore, setCurrentDriftScore] = useState(0);
   const [driftCombo, setDriftCombo] = useState(0);
   const [isDrifting, setIsDrifting] = useState(false);
-  const [carPosition, setCarPosition] = useState({ x: 50, y: 50, z: 0 });
+  const [carPosition, setCarPosition] = useState({ x: 50, y: 50 });
   const [carRotation, setCarRotation] = useState(0);
   const [roadOffset, setRoadOffset] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileControls, setMobileControls] = useState({ gas: false, brake: false, left: false, right: false });
+  
+  const [playerName, setPlayerName] = useState('Игрок');
+  const [isMultiplayer, setIsMultiplayer] = useState(false);
+  const [roomCode, setRoomCode] = useState('');
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [myPlayerId] = useState(`player_${Math.random().toString(36).substr(2, 9)}`);
+
   const [settings, setSettings] = useState({
     music: 70,
     sfx: 80,
@@ -146,6 +278,7 @@ const Index = () => {
   const gameLoopRef = useRef<number>();
   const driftTimerRef = useRef<NodeJS.Timeout>();
   const lastDriftRewardRef = useRef(0);
+  const multiplayerIntervalRef = useRef<NodeJS.Timeout>();
 
   const [leaderboard] = useState<LeaderboardEntry[]>([
     { rank: 1, name: 'DRIFT_KING_77', score: 25680, car: 'ВАЗ 2114' },
@@ -154,6 +287,15 @@ const Index = () => {
     { rank: 4, name: 'RussianDrift', score: 19880, car: 'Lada 2107' },
     { rank: 5, name: 'MoscowNights', score: 18560, car: 'ВАЗ 2114' },
   ]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const savedState = localStorage.getItem('driftCarRussiaState');
@@ -165,6 +307,7 @@ const Index = () => {
         setSelectedCar(parsed.selectedCar);
         setSettings(parsed.settings);
         setAchievements(parsed.achievements);
+        if (parsed.playerName) setPlayerName(parsed.playerName);
       } catch (e) {
         console.error('Failed to load saved state:', e);
       }
@@ -178,9 +321,10 @@ const Index = () => {
       selectedCar,
       settings,
       achievements,
+      playerName,
     };
     localStorage.setItem('driftCarRussiaState', JSON.stringify(stateToSave));
-  }, [cars, credits, selectedCar, settings, achievements]);
+  }, [cars, credits, selectedCar, settings, achievements, playerName]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -207,6 +351,42 @@ const Index = () => {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [currentSection]);
+
+  useEffect(() => {
+    if (isMultiplayer && roomCode) {
+      multiplayerIntervalRef.current = setInterval(() => {
+        const myPlayer: Player = {
+          id: myPlayerId,
+          name: playerName,
+          car: selectedCar,
+          position: carPosition,
+          rotation: carRotation,
+          speed: currentSpeed,
+          score: currentDriftScore,
+          skin: cars.find(c => c.id === selectedCar)?.selectedSkin || 'default',
+        };
+
+        const storedPlayers = localStorage.getItem(`multiplayer_room_${roomCode}`);
+        let roomPlayers: Player[] = storedPlayers ? JSON.parse(storedPlayers) : [];
+        
+        roomPlayers = roomPlayers.filter(p => p.id !== myPlayerId);
+        roomPlayers.push(myPlayer);
+        
+        if (roomPlayers.length > 5) {
+          roomPlayers = roomPlayers.slice(-5);
+        }
+
+        localStorage.setItem(`multiplayer_room_${roomCode}`, JSON.stringify(roomPlayers));
+        setPlayers(roomPlayers.filter(p => p.id !== myPlayerId));
+      }, 100);
+
+      return () => {
+        if (multiplayerIntervalRef.current) {
+          clearInterval(multiplayerIntervalRef.current);
+        }
+      };
+    }
+  }, [isMultiplayer, roomCode, carPosition, carRotation, currentSpeed, currentDriftScore, myPlayerId, playerName, selectedCar, cars]);
 
   const unlockAchievement = (achievementId: string) => {
     const achievement = achievements.find(a => a.id === achievementId);
@@ -280,10 +460,15 @@ const Index = () => {
     const acceleration = car.acceleration / 10;
     const handling = car.handling / 50;
 
-    if (keysPressed.current.has('w') || keysPressed.current.has('arrowup')) {
+    const isGasPressed = keysPressed.current.has('w') || keysPressed.current.has('arrowup') || mobileControls.gas;
+    const isBrakePressed = keysPressed.current.has('s') || keysPressed.current.has('arrowdown') || mobileControls.brake;
+    const isLeftPressed = keysPressed.current.has('a') || keysPressed.current.has('arrowleft') || mobileControls.left;
+    const isRightPressed = keysPressed.current.has('d') || keysPressed.current.has('arrowright') || mobileControls.right;
+
+    if (isGasPressed) {
       targetSpeed = maxSpeedKmh;
     }
-    if (keysPressed.current.has('s') || keysPressed.current.has('arrowdown')) {
+    if (isBrakePressed) {
       targetSpeed = -maxSpeedKmh * 0.5;
     }
 
@@ -291,14 +476,14 @@ const Index = () => {
     const newSpeed = currentSpeed + Math.sign(speedDiff) * Math.min(Math.abs(speedDiff), acceleration);
     setCurrentSpeed(newSpeed);
 
-    if (keysPressed.current.has('a') || keysPressed.current.has('arrowleft')) {
+    if (isLeftPressed) {
       const turnSpeed = handling * (Math.abs(currentSpeed) / maxSpeedKmh);
       newRotation -= turnSpeed;
       if (Math.abs(currentSpeed) > maxSpeedKmh * 0.3) {
         isDriftingNow = true;
       }
     }
-    if (keysPressed.current.has('d') || keysPressed.current.has('arrowright')) {
+    if (isRightPressed) {
       const turnSpeed = handling * (Math.abs(currentSpeed) / maxSpeedKmh);
       newRotation += turnSpeed;
       if (Math.abs(currentSpeed) > maxSpeedKmh * 0.3) {
@@ -315,9 +500,9 @@ const Index = () => {
     setRoadOffset(prev => (prev + currentSpeed * 0.1) % 1000);
 
     if (isDriftingNow && Math.abs(currentSpeed) > 0) {
-      const driftPoints = Math.floor(Math.abs(currentSpeed) / 10) * (1 + driftCombo * 0.1);
+      const driftPoints = Math.floor(Math.abs(currentSpeed) / 5) * (1 + driftCombo * 0.15);
       setCurrentDriftScore(prev => prev + driftPoints);
-      setDriftCombo(prev => Math.min(prev + 1, 10));
+      setDriftCombo(prev => Math.min(prev + 1, 20));
       
       if (!isDrifting) {
         setIsDrifting(true);
@@ -359,11 +544,11 @@ const Index = () => {
       setDriftCombo(prev => Math.max(0, prev - 1));
     }
 
-    if (Math.abs(currentSpeed) >= maxSpeedKmh * 0.99 && maxSpeedKmh >= 235) {
+    if (Math.abs(currentSpeed) >= maxSpeedKmh * 0.99 && maxSpeedKmh >= 500) {
       unlockAchievement('6');
     }
 
-    if (totalEarnings >= 50000) {
+    if (totalEarnings >= 500000) {
       unlockAchievement('7');
     }
   };
@@ -377,20 +562,21 @@ const Index = () => {
         }
       };
     }
-  }, [currentSection, currentSpeed, carRotation, selectedCar, isDrifting, currentDriftScore, driftCombo]);
+  }, [currentSection, currentSpeed, carRotation, selectedCar, isDrifting, currentDriftScore, driftCombo, mobileControls]);
 
   const upgradeCar = (carId: string, stat: 'speed' | 'handling' | 'acceleration') => {
     const car = cars.find(c => c.id === carId);
     if (!car) return;
 
-    const upgradeCost = 500;
+    const upgradeCost = car.category === 'premium' ? 5000 : 500;
     const maxValue = stat === 'speed' ? car.maxSpeed : stat === 'handling' ? car.maxHandling : car.maxAcceleration;
     const currentValue = car[stat];
+    const upgradeAmount = car.category === 'premium' ? 20 : 10;
 
     if (credits >= upgradeCost && currentValue < maxValue) {
       setCars(cars.map(c => 
         c.id === carId 
-          ? { ...c, [stat]: Math.min(currentValue + 10, maxValue) }
+          ? { ...c, [stat]: Math.min(currentValue + upgradeAmount, maxValue) }
           : c
       ));
       setCredits(credits - upgradeCost);
@@ -398,7 +584,7 @@ const Index = () => {
 
       const updatedCars = cars.map(c => 
         c.id === carId 
-          ? { ...c, [stat]: Math.min(currentValue + 10, maxValue) }
+          ? { ...c, [stat]: Math.min(currentValue + upgradeAmount, maxValue) }
           : c
       );
       const upgradedCar = updatedCars.find(c => c.id === carId);
@@ -419,10 +605,48 @@ const Index = () => {
       setCredits(credits - car.price);
       playSound('upgrade');
 
+      if (car.category === 'premium') {
+        unlockAchievement('9');
+      }
+
       if (cars.filter(c => c.unlocked).length + 1 === cars.length) {
         unlockAchievement('2');
       }
     }
+  };
+
+  const unlockSkin = (carId: string, skinId: string) => {
+    const car = cars.find(c => c.id === carId);
+    const skin = car?.skins.find(s => s.id === skinId);
+    
+    if (!car || !skin || skin.unlocked) return;
+
+    if (credits >= skin.price) {
+      setCars(cars.map(c => 
+        c.id === carId 
+          ? { 
+              ...c, 
+              skins: c.skins.map(s => 
+                s.id === skinId ? { ...s, unlocked: true } : s
+              )
+            }
+          : c
+      ));
+      setCredits(credits - skin.price);
+      playSound('upgrade');
+
+      const updatedCar = cars.find(c => c.id === carId);
+      if (updatedCar && updatedCar.skins.every(s => s.unlocked || s.id === skinId)) {
+        unlockAchievement('8');
+      }
+    }
+  };
+
+  const selectSkin = (carId: string, skinId: string) => {
+    setCars(cars.map(c => 
+      c.id === carId ? { ...c, selectedSkin: skinId } : c
+    ));
+    playSound('button');
   };
 
   const resetProgress = () => {
@@ -439,23 +663,48 @@ const Index = () => {
     });
   };
 
+  const createRoom = () => {
+    const newRoomCode = Math.random().toString(36).substr(2, 6).toUpperCase();
+    setRoomCode(newRoomCode);
+    setIsMultiplayer(true);
+    localStorage.setItem(`multiplayer_room_${newRoomCode}`, JSON.stringify([]));
+    toast({
+      title: '🎮 Комната создана!',
+      description: `Код комнаты: ${newRoomCode}`,
+    });
+    setCurrentSection('city');
+  };
+
+  const joinRoom = (code: string) => {
+    if (code.length === 6) {
+      setRoomCode(code);
+      setIsMultiplayer(true);
+      toast({
+        title: '🎮 Подключение к комнате...',
+        description: `Код: ${code}`,
+      });
+      setCurrentSection('city');
+    }
+  };
+
   const renderHome = () => (
     <div className="flex flex-col items-center justify-center min-h-screen p-8">
       <div className="text-center space-y-8 max-w-4xl">
-        <h1 className="font-orbitron text-8xl font-black neon-text-cyan tracking-wider animate-glitch">
+        <h1 className="font-orbitron text-6xl md:text-8xl font-black neon-text-cyan tracking-wider animate-glitch">
           DRIFT CAR RUSSIA
         </h1>
-        <p className="font-roboto text-2xl neon-text-magenta">
+        <p className="font-roboto text-xl md:text-2xl neon-text-magenta">
           Открытый мир • Киберпанк • Неоновые ночи
         </p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-12">
-          {['city', 'garage', 'leaderboard', 'achievements', 'settings'].map((section) => {
+          {['city', 'multiplayer', 'garage', 'leaderboard', 'achievements', 'settings'].map((section) => {
             const icons = {
               garage: 'Car',
               city: 'Gamepad2',
               leaderboard: 'Trophy',
               achievements: 'Award',
               settings: 'Settings',
+              multiplayer: 'Users',
             };
             const labels = {
               garage: 'Гараж',
@@ -463,6 +712,7 @@ const Index = () => {
               leaderboard: 'Лидерборд',
               achievements: 'Достижения',
               settings: 'Настройки',
+              multiplayer: 'Мультиплеер',
             };
             return (
               <Button
@@ -471,11 +721,11 @@ const Index = () => {
                   setCurrentSection(section as any);
                   playSound('button');
                 }}
-                className="h-24 text-xl font-orbitron bg-card hover:bg-card/80 neon-border-cyan border-2 transition-all hover:scale-105"
+                className="h-24 text-lg md:text-xl font-orbitron bg-card hover:bg-card/80 neon-border-cyan border-2 transition-all hover:scale-105"
               >
                 <div className="flex flex-col items-center gap-2">
                   <Icon name={icons[section as keyof typeof icons] as any} size={32} className="neon-text-cyan" />
-                  <span className="neon-text-purple">{labels[section as keyof typeof labels]}</span>
+                  <span className="neon-text-purple text-sm md:text-base">{labels[section as keyof typeof labels]}</span>
                 </div>
               </Button>
             );
@@ -483,7 +733,7 @@ const Index = () => {
         </div>
         <div className="mt-8 flex items-center justify-center gap-4">
           <Icon name="Coins" className="neon-text-magenta" size={32} />
-          <span className="font-orbitron text-3xl neon-text-cyan">{credits} ₽</span>
+          <span className="font-orbitron text-2xl md:text-3xl neon-text-cyan">{credits} ₽</span>
         </div>
       </div>
     </div>
@@ -493,8 +743,11 @@ const Index = () => {
     const car = cars.find(c => c.id === selectedCar);
     if (!car) return null;
 
+    const russianCars = cars.filter(c => c.category === 'russian');
+    const premiumCars = cars.filter(c => c.category === 'premium');
+
     return (
-      <div className="min-h-screen p-8">
+      <div className="min-h-screen p-4 md:p-8">
         <Button
           onClick={() => {
             setCurrentSection('home');
@@ -506,128 +759,322 @@ const Index = () => {
           Меню
         </Button>
         
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <h2 className="font-orbitron text-4xl neon-text-cyan">ГАРАЖ</h2>
-            <div className="space-y-3">
-              {cars.map((c) => (
-                <Card
-                  key={c.id}
-                  className={`p-4 cursor-pointer transition-all border-2 ${
-                    selectedCar === c.id 
-                      ? 'neon-border-cyan scale-105' 
-                      : 'border-muted hover:border-primary'
-                  } ${!c.unlocked ? 'opacity-50' : ''}`}
-                  onClick={() => {
-                    if (c.unlocked) {
-                      setSelectedCar(c.id);
-                      playSound('button');
-                    }
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Icon name="Car" size={32} className="neon-text-magenta" />
+        <Tabs defaultValue="cars" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="cars" className="font-orbitron">Машины</TabsTrigger>
+            <TabsTrigger value="skins" className="font-orbitron">Скины</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="cars">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="font-orbitron text-2xl md:text-4xl neon-text-cyan mb-4">РОССИЙСКИЕ АВТО</h2>
+                  <div className="space-y-3">
+                    {russianCars.map((c) => (
+                      <Card
+                        key={c.id}
+                        className={`p-4 cursor-pointer transition-all border-2 ${
+                          selectedCar === c.id 
+                            ? 'neon-border-cyan scale-105' 
+                            : 'border-muted hover:border-primary'
+                        } ${!c.unlocked ? 'opacity-50' : ''}`}
+                        onClick={() => {
+                          if (c.unlocked) {
+                            setSelectedCar(c.id);
+                            playSound('button');
+                          }
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Icon name="Car" size={32} className="neon-text-magenta" />
+                            <div>
+                              <h3 className="font-orbitron text-lg neon-text-purple">{c.name}</h3>
+                              {!c.unlocked && (
+                                <p className="text-sm text-muted-foreground">
+                                  {c.price} ₽
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {!c.unlocked ? (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                unlockCar(c.id);
+                              }}
+                              disabled={credits < c.price}
+                              className="neon-border-magenta border-2 font-orbitron"
+                              size="sm"
+                            >
+                              Купить
+                            </Button>
+                          ) : (
+                            <Badge className="bg-primary font-orbitron">✓</Badge>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="font-orbitron text-2xl md:text-4xl neon-text-magenta mb-4">ПРЕМИУМ КЛАСС</h2>
+                  <div className="space-y-3">
+                    {premiumCars.map((c) => (
+                      <Card
+                        key={c.id}
+                        className={`p-4 cursor-pointer transition-all border-2 ${
+                          selectedCar === c.id 
+                            ? 'neon-border-magenta scale-105' 
+                            : 'border-muted hover:border-secondary'
+                        } ${!c.unlocked ? 'opacity-50' : ''}`}
+                        onClick={() => {
+                          if (c.unlocked) {
+                            setSelectedCar(c.id);
+                            playSound('button');
+                          }
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Icon name="Gem" size={32} className="neon-text-cyan" />
+                            <div>
+                              <h3 className="font-orbitron text-lg neon-text-cyan">{c.name}</h3>
+                              {!c.unlocked && (
+                                <p className="text-sm neon-text-magenta">
+                                  {c.price.toLocaleString()} ₽
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {!c.unlocked ? (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                unlockCar(c.id);
+                              }}
+                              disabled={credits < c.price}
+                              className="neon-border-cyan border-2 font-orbitron"
+                              size="sm"
+                            >
+                              Купить
+                            </Button>
+                          ) : (
+                            <Badge className="bg-secondary font-orbitron">✓</Badge>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {car.unlocked && (
+                <div className="space-y-6">
+                  <Card className="p-6 border-2 neon-border-cyan">
+                    <h3 className="font-orbitron text-xl md:text-2xl neon-text-magenta mb-6">{car.name}</h3>
+                    
+                    <div className="space-y-6">
                       <div>
-                        <h3 className="font-orbitron text-xl neon-text-purple">{c.name}</h3>
-                        {!c.unlocked && (
-                          <p className="text-sm text-muted-foreground">
-                            Цена: {c.price} ₽
-                          </p>
+                        <div className="flex justify-between mb-2">
+                          <span className="font-roboto neon-text-purple">Макс. скорость</span>
+                          <span className="font-orbitron neon-text-cyan">{car.speed}/{car.maxSpeed} км/ч</span>
+                        </div>
+                        <Progress value={(car.speed / car.maxSpeed) * 100} className="h-2" />
+                        <Button
+                          onClick={() => upgradeCar(car.id, 'speed')}
+                          disabled={car.speed >= car.maxSpeed || credits < (car.category === 'premium' ? 5000 : 500)}
+                          className="mt-2 w-full neon-border-magenta border font-orbitron"
+                          size="sm"
+                        >
+                          Улучшить +{car.category === 'premium' ? 20 : 10} ({car.category === 'premium' ? 5000 : 500}₽)
+                        </Button>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="font-roboto neon-text-purple">Управляемость</span>
+                          <span className="font-orbitron neon-text-cyan">{car.handling}/{car.maxHandling}</span>
+                        </div>
+                        <Progress value={car.handling} className="h-2" />
+                        <Button
+                          onClick={() => upgradeCar(car.id, 'handling')}
+                          disabled={car.handling >= car.maxHandling || credits < (car.category === 'premium' ? 5000 : 500)}
+                          className="mt-2 w-full neon-border-magenta border font-orbitron"
+                          size="sm"
+                        >
+                          Улучшить ({car.category === 'premium' ? 5000 : 500}₽)
+                        </Button>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="font-roboto neon-text-purple">Ускорение</span>
+                          <span className="font-orbitron neon-text-cyan">{car.acceleration}/{car.maxAcceleration}</span>
+                        </div>
+                        <Progress value={car.acceleration} className="h-2" />
+                        <Button
+                          onClick={() => upgradeCar(car.id, 'acceleration')}
+                          disabled={car.acceleration >= car.maxAcceleration || credits < (car.category === 'premium' ? 5000 : 500)}
+                          className="mt-2 w-full neon-border-magenta border font-orbitron"
+                          size="sm"
+                        >
+                          Улучшить ({car.category === 'premium' ? 5000 : 500}₽)
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-4">
+                      <Icon name="Coins" className="neon-text-magenta" size={32} />
+                      <span className="font-orbitron text-2xl md:text-3xl neon-text-cyan">{credits} ₽</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="skins">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="font-orbitron text-3xl neon-text-cyan mb-6 text-center">ВЫБЕРИ СКИН ДЛЯ {car.name.toUpperCase()}</h2>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {car.skins.map((skin) => (
+                  <Card
+                    key={skin.id}
+                    className={`p-6 cursor-pointer transition-all border-2 ${
+                      car.selectedSkin === skin.id 
+                        ? 'neon-border-cyan scale-105' 
+                        : skin.unlocked 
+                        ? 'border-muted hover:border-primary' 
+                        : 'opacity-50 border-muted'
+                    }`}
+                    onClick={() => {
+                      if (skin.unlocked) {
+                        selectSkin(car.id, skin.id);
+                      }
+                    }}
+                  >
+                    <div className="space-y-4">
+                      <div
+                        className="w-full h-24 rounded border-2"
+                        style={{ 
+                          background: skin.color.includes('gradient') ? skin.color : skin.color,
+                          borderColor: 'hsl(var(--primary))',
+                          boxShadow: `0 0 20px ${skin.color}`,
+                        }}
+                      />
+                      <div className="text-center">
+                        <h3 className="font-orbitron neon-text-purple mb-2">{skin.name}</h3>
+                        {!skin.unlocked ? (
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              unlockSkin(car.id, skin.id);
+                            }}
+                            disabled={credits < skin.price}
+                            className="w-full neon-border-magenta border font-orbitron"
+                            size="sm"
+                          >
+                            {skin.price}₽
+                          </Button>
+                        ) : car.selectedSkin === skin.id ? (
+                          <Badge className="w-full bg-primary font-orbitron">Выбран</Badge>
+                        ) : (
+                          <Badge className="w-full bg-muted font-orbitron">Куплен</Badge>
                         )}
                       </div>
                     </div>
-                    {!c.unlocked ? (
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          unlockCar(c.id);
-                        }}
-                        disabled={credits < c.price}
-                        className="neon-border-magenta border-2 font-orbitron"
-                      >
-                        Купить
-                      </Button>
-                    ) : (
-                      <Badge className="bg-primary font-orbitron">Куплено</Badge>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {car.unlocked && (
-            <div className="space-y-6">
-              <Card className="p-6 border-2 neon-border-cyan">
-                <h3 className="font-orbitron text-2xl neon-text-magenta mb-6">{car.name}</h3>
-                
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="font-roboto neon-text-purple">Макс. скорость</span>
-                      <span className="font-orbitron neon-text-cyan">{car.speed}/{car.maxSpeed} км/ч</span>
-                    </div>
-                    <Progress value={(car.speed / car.maxSpeed) * 100} className="h-2" />
-                    <Button
-                      onClick={() => upgradeCar(car.id, 'speed')}
-                      disabled={car.speed >= car.maxSpeed || credits < 500}
-                      className="mt-2 w-full neon-border-magenta border font-orbitron"
-                      size="sm"
-                    >
-                      Улучшить +10 км/ч (500₽)
-                    </Button>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="font-roboto neon-text-purple">Управляемость</span>
-                      <span className="font-orbitron neon-text-cyan">{car.handling}/{car.maxHandling}</span>
-                    </div>
-                    <Progress value={car.handling} className="h-2" />
-                    <Button
-                      onClick={() => upgradeCar(car.id, 'handling')}
-                      disabled={car.handling >= car.maxHandling || credits < 500}
-                      className="mt-2 w-full neon-border-magenta border font-orbitron"
-                      size="sm"
-                    >
-                      Улучшить (500₽)
-                    </Button>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="font-roboto neon-text-purple">Ускорение</span>
-                      <span className="font-orbitron neon-text-cyan">{car.acceleration}/{car.maxAcceleration}</span>
-                    </div>
-                    <Progress value={car.acceleration} className="h-2" />
-                    <Button
-                      onClick={() => upgradeCar(car.id, 'acceleration')}
-                      disabled={car.acceleration >= car.maxAcceleration || credits < 500}
-                      className="mt-2 w-full neon-border-magenta border font-orbitron"
-                      size="sm"
-                    >
-                      Улучшить (500₽)
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-4 mb-4">
-                  <Icon name="Coins" className="neon-text-magenta" size={32} />
-                  <span className="font-orbitron text-3xl neon-text-cyan">{credits} ₽</span>
-                </div>
+                  </Card>
+                ))}
               </div>
             </div>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   };
 
+  const renderMultiplayer = () => (
+    <div className="min-h-screen p-8">
+      <Button
+        onClick={() => {
+          setCurrentSection('home');
+          playSound('button');
+        }}
+        className="mb-6 neon-border-cyan border-2 font-orbitron"
+      >
+        <Icon name="ArrowLeft" className="mr-2" />
+        Назад
+      </Button>
+
+      <div className="max-w-2xl mx-auto space-y-8">
+        <h2 className="font-orbitron text-4xl neon-text-cyan text-center">МУЛЬТИПЛЕЕР</h2>
+        
+        <Card className="p-8 border-2 neon-border-cyan space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="font-roboto text-lg neon-text-purple mb-2 block">Ваше имя</label>
+              <Input
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                placeholder="Введите имя"
+                className="font-orbitron neon-border-cyan border-2"
+                maxLength={20}
+              />
+            </div>
+
+            <div className="pt-4 border-t border-primary">
+              <h3 className="font-orbitron text-xl neon-text-magenta mb-4">Создать комнату</h3>
+              <Button
+                onClick={createRoom}
+                className="w-full h-16 text-xl font-orbitron neon-border-cyan border-2"
+              >
+                <Icon name="Plus" className="mr-2" size={24} />
+                Создать сервер (до 5 игроков)
+              </Button>
+            </div>
+
+            <div className="pt-4 border-t border-primary">
+              <h3 className="font-orbitron text-xl neon-text-magenta mb-4">Присоединиться</h3>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="КОД КОМНАТЫ"
+                  className="font-orbitron neon-border-magenta border-2 uppercase"
+                  maxLength={6}
+                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                />
+                <Button
+                  onClick={() => joinRoom(roomCode)}
+                  disabled={roomCode.length !== 6}
+                  className="neon-border-magenta border-2 font-orbitron"
+                >
+                  <Icon name="LogIn" size={20} />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-primary">
+            <div className="font-roboto text-sm neon-text-purple space-y-2">
+              <p>• Комната хранится локально</p>
+              <p>• Максимум 5 игроков на сервер</p>
+              <p>• Делитесь кодом с друзьями</p>
+              <p>• Соревнуйтесь в дрифте!</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+
   const renderCity = () => {
     const car = cars.find(c => c.id === selectedCar);
+    const currentSkin = car?.skins.find(s => s.id === car.selectedSkin);
     
     return (
       <div className="fixed inset-0 bg-background overflow-hidden">
@@ -679,44 +1126,78 @@ const Index = () => {
                 />
               );
             })}
+
+            {isMultiplayer && players.map((player) => (
+              <div
+                key={player.id}
+                className="absolute transition-all duration-100"
+                style={{
+                  left: `${player.position.x}%`,
+                  bottom: `${player.position.y}%`,
+                  transform: `translate(-50%, -50%) rotate(${player.rotation}deg)`,
+                }}
+              >
+                <div className="flex flex-col items-center">
+                  <div className="font-roboto text-xs neon-text-cyan mb-1">{player.name}</div>
+                  <Icon name="Car" size={32} className="neon-text-magenta" />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
+        <div className="absolute top-2 md:top-4 left-2 md:left-4 right-2 md:right-4 flex justify-between items-start z-10">
           <Button
             onClick={() => {
               setCurrentSection('home');
+              setIsMultiplayer(false);
               playSound('button');
             }}
             className="neon-border-cyan border-2 font-orbitron"
             size="sm"
           >
             <Icon name="Menu" className="mr-2" size={16} />
-            ESC - Меню
+            {!isMobile && 'ESC -'} Меню
           </Button>
 
-          <Card className="p-4 bg-background/80 backdrop-blur border-2 neon-border-cyan">
-            <div className="flex items-center gap-6">
+          <Card className="p-2 md:p-4 bg-background/80 backdrop-blur border-2 neon-border-cyan">
+            <div className="flex items-center gap-2 md:gap-6">
               <div className="text-center">
-                <div className="font-orbitron text-3xl neon-text-cyan">{Math.abs(currentSpeed).toFixed(0)}</div>
+                <div className="font-orbitron text-xl md:text-3xl neon-text-cyan">{Math.abs(currentSpeed).toFixed(0)}</div>
                 <div className="font-roboto text-xs neon-text-purple">км/ч</div>
               </div>
               <div className="text-center">
-                <div className="font-orbitron text-2xl neon-text-magenta">{credits}</div>
-                <div className="font-roboto text-xs neon-text-purple">рублей</div>
+                <div className="font-orbitron text-lg md:text-2xl neon-text-magenta">{credits}</div>
+                <div className="font-roboto text-xs neon-text-purple">₽</div>
               </div>
             </div>
           </Card>
         </div>
 
+        {isMultiplayer && (
+          <div className="absolute top-20 right-4 z-10">
+            <Card className="p-4 bg-background/90 backdrop-blur border-2 neon-border-cyan max-w-xs">
+              <div className="space-y-2">
+                <div className="font-orbitron text-sm neon-text-cyan">Игроки: {players.length + 1}/5</div>
+                <div className="font-roboto text-xs neon-text-purple">Код: {roomCode}</div>
+                {players.slice(0, 4).map((player) => (
+                  <div key={player.id} className="text-xs font-roboto neon-text-magenta">
+                    {player.name}: {player.score.toFixed(0)} очков
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+
         <div className="absolute bottom-4 left-4 right-4 z-10 space-y-4">
           {isDrifting && (
-            <Card className="p-6 bg-background/90 backdrop-blur border-2 neon-border-magenta animate-pulse">
+            <Card className="p-4 md:p-6 bg-background/90 backdrop-blur border-2 neon-border-magenta animate-pulse">
               <div className="text-center space-y-2">
-                <div className="font-orbitron text-5xl neon-text-cyan">
+                <div className="font-orbitron text-3xl md:text-5xl neon-text-cyan">
                   {currentDriftScore.toFixed(0)}
                 </div>
-                <div className="font-roboto text-lg neon-text-magenta">
+                <div className="font-roboto text-base md:text-lg neon-text-magenta">
                   ДРИФТ! x{driftCombo}
                 </div>
                 <div className="font-roboto text-sm neon-text-purple">
@@ -728,30 +1209,77 @@ const Index = () => {
             </Card>
           )}
 
-          <Card className="p-4 bg-background/80 backdrop-blur border-2 neon-border-cyan">
-            <div className="font-roboto text-sm neon-text-purple text-center space-y-1">
-              <div className="flex justify-center gap-8">
-                <span>W/↑ - Газ</span>
-                <span>A/← D/→ - Поворот</span>
-                <span>S/↓ - Назад</span>
-                <span>SPACE - Тормоз</span>
+          {!isMobile && (
+            <Card className="p-4 bg-background/80 backdrop-blur border-2 neon-border-cyan">
+              <div className="font-roboto text-sm neon-text-purple text-center space-y-1">
+                <div className="flex justify-center gap-4 md:gap-8 flex-wrap">
+                  <span>W/↑ - Газ</span>
+                  <span>A/← D/→ - Поворот</span>
+                  <span>S/↓ - Назад</span>
+                  <span>SPACE - Тормоз</span>
+                </div>
+                <div className="font-orbitron text-xs neon-text-magenta">
+                  {car?.name} • 1000 очков = 500₽ | 2000 = 1000₽ | 3000 = 3000₽
+                </div>
               </div>
-              <div className="font-orbitron text-xs neon-text-magenta">
-                {car?.name} • Награды: 1000 очков = 500₽ | 2000 = 1000₽ | 3000 = 3000₽
-              </div>
-            </div>
-          </Card>
+            </Card>
+          )}
         </div>
 
+        {isMobile && (
+          <div className="absolute bottom-4 left-4 right-4 z-20 flex justify-between items-end">
+            <div className="flex flex-col gap-2">
+              <Button
+                onTouchStart={() => setMobileControls(prev => ({ ...prev, gas: true }))}
+                onTouchEnd={() => setMobileControls(prev => ({ ...prev, gas: false }))}
+                className="w-20 h-20 rounded-full neon-border-cyan border-2 font-orbitron text-2xl"
+              >
+                ↑
+              </Button>
+              <Button
+                onTouchStart={() => setMobileControls(prev => ({ ...prev, brake: true }))}
+                onTouchEnd={() => setMobileControls(prev => ({ ...prev, brake: false }))}
+                className="w-20 h-20 rounded-full neon-border-magenta border-2 font-orbitron text-2xl"
+              >
+                ↓
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onTouchStart={() => setMobileControls(prev => ({ ...prev, left: true }))}
+                onTouchEnd={() => setMobileControls(prev => ({ ...prev, left: false }))}
+                className="w-20 h-20 rounded-full neon-border-cyan border-2 font-orbitron text-2xl"
+              >
+                ←
+              </Button>
+              <Button
+                onTouchStart={() => setMobileControls(prev => ({ ...prev, right: true }))}
+                onTouchEnd={() => setMobileControls(prev => ({ ...prev, right: false }))}
+                className="w-20 h-20 rounded-full neon-border-cyan border-2 font-orbitron text-2xl"
+              >
+                →
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="absolute bottom-1/3 left-1/2 transform -translate-x-1/2 z-5">
-          <Icon name="Car" size={80} className="neon-text-magenta" style={{ transform: `rotate(${carRotation}deg)` }} />
+          <div
+            style={{
+              color: currentSkin?.color,
+              filter: `drop-shadow(0 0 20px ${currentSkin?.color})`,
+            }}
+          >
+            <Icon name="Car" size={isMobile ? 60 : 80} style={{ transform: `rotate(${carRotation}deg)` }} />
+          </div>
         </div>
       </div>
     );
   };
 
   const renderLeaderboard = () => (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-4 md:p-8">
       <Button
         onClick={() => {
           setCurrentSection('home');
@@ -764,21 +1292,21 @@ const Index = () => {
       </Button>
 
       <div className="max-w-4xl mx-auto">
-        <h2 className="font-orbitron text-4xl neon-text-cyan mb-8 text-center">ЛИДЕРБОРД</h2>
+        <h2 className="font-orbitron text-3xl md:text-4xl neon-text-cyan mb-8 text-center">ЛИДЕРБОРД</h2>
         
         <div className="space-y-3">
           {leaderboard.map((entry) => (
             <Card
               key={entry.rank}
-              className={`p-6 border-2 transition-all ${
+              className={`p-4 md:p-6 border-2 transition-all ${
                 entry.rank <= 3 
                   ? 'neon-border-cyan animate-neon-pulse' 
                   : 'border-muted hover:border-primary'
               }`}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <div className={`font-orbitron text-4xl ${
+                <div className="flex items-center gap-4 md:gap-6">
+                  <div className={`font-orbitron text-2xl md:text-4xl ${
                     entry.rank === 1 ? 'neon-text-cyan' :
                     entry.rank === 2 ? 'neon-text-magenta' :
                     entry.rank === 3 ? 'neon-text-purple' :
@@ -787,13 +1315,13 @@ const Index = () => {
                     #{entry.rank}
                   </div>
                   <div>
-                    <h3 className="font-orbitron text-xl neon-text-purple">{entry.name}</h3>
-                    <p className="font-roboto text-sm text-muted-foreground">{entry.car}</p>
+                    <h3 className="font-orbitron text-lg md:text-xl neon-text-purple">{entry.name}</h3>
+                    <p className="font-roboto text-xs md:text-sm text-muted-foreground">{entry.car}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-orbitron text-2xl neon-text-cyan">{entry.score.toLocaleString()}</div>
-                  <div className="font-roboto text-sm neon-text-magenta">очков</div>
+                  <div className="font-orbitron text-xl md:text-2xl neon-text-cyan">{entry.score.toLocaleString()}</div>
+                  <div className="font-roboto text-xs md:text-sm neon-text-magenta">очков</div>
                 </div>
               </div>
             </Card>
@@ -804,7 +1332,7 @@ const Index = () => {
   );
 
   const renderAchievements = () => (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-4 md:p-8">
       <Button
         onClick={() => {
           setCurrentSection('home');
@@ -817,13 +1345,13 @@ const Index = () => {
       </Button>
 
       <div className="max-w-4xl mx-auto">
-        <h2 className="font-orbitron text-4xl neon-text-cyan mb-8 text-center">ДОСТИЖЕНИЯ</h2>
+        <h2 className="font-orbitron text-3xl md:text-4xl neon-text-cyan mb-8 text-center">ДОСТИЖЕНИЯ</h2>
         
         <div className="grid md:grid-cols-2 gap-4">
           {achievements.map((achievement) => (
             <Card
               key={achievement.id}
-              className={`p-6 border-2 transition-all ${
+              className={`p-4 md:p-6 border-2 transition-all ${
                 achievement.completed 
                   ? 'neon-border-cyan' 
                   : 'border-muted opacity-60'
@@ -832,14 +1360,14 @@ const Index = () => {
               <div className="flex items-start gap-4">
                 <Icon 
                   name={achievement.icon as any} 
-                  size={48} 
+                  size={isMobile ? 32 : 48} 
                   className={achievement.completed ? 'neon-text-magenta' : 'text-muted-foreground'} 
                 />
                 <div className="flex-1">
-                  <h3 className="font-orbitron text-xl neon-text-purple mb-1">
+                  <h3 className="font-orbitron text-lg md:text-xl neon-text-purple mb-1">
                     {achievement.title}
                   </h3>
-                  <p className="font-roboto text-sm text-muted-foreground">
+                  <p className="font-roboto text-xs md:text-sm text-muted-foreground">
                     {achievement.description}
                   </p>
                   {achievement.completed && (
@@ -855,7 +1383,7 @@ const Index = () => {
   );
 
   const renderSettings = () => (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-4 md:p-8">
       <Button
         onClick={() => {
           setCurrentSection('home');
@@ -868,12 +1396,12 @@ const Index = () => {
       </Button>
 
       <div className="max-w-2xl mx-auto">
-        <h2 className="font-orbitron text-4xl neon-text-cyan mb-8 text-center">НАСТРОЙКИ</h2>
+        <h2 className="font-orbitron text-3xl md:text-4xl neon-text-cyan mb-8 text-center">НАСТРОЙКИ</h2>
         
-        <Card className="p-8 border-2 neon-border-cyan space-y-8">
+        <Card className="p-6 md:p-8 border-2 neon-border-cyan space-y-8">
           <div>
             <div className="flex justify-between mb-4">
-              <span className="font-roboto text-lg neon-text-purple">Музыка</span>
+              <span className="font-roboto text-base md:text-lg neon-text-purple">Музыка</span>
               <span className="font-orbitron neon-text-cyan">{settings.music}%</span>
             </div>
             <Slider
@@ -886,7 +1414,7 @@ const Index = () => {
 
           <div>
             <div className="flex justify-between mb-4">
-              <span className="font-roboto text-lg neon-text-purple">Звуковые эффекты</span>
+              <span className="font-roboto text-base md:text-lg neon-text-purple">Звуковые эффекты</span>
               <span className="font-orbitron neon-text-cyan">{settings.sfx}%</span>
             </div>
             <Slider
@@ -899,7 +1427,7 @@ const Index = () => {
 
           <div>
             <div className="flex justify-between mb-4">
-              <span className="font-roboto text-lg neon-text-purple">Чувствительность управления</span>
+              <span className="font-roboto text-base md:text-lg neon-text-purple">Чувствительность</span>
               <span className="font-orbitron neon-text-cyan">{settings.sensitivity}%</span>
             </div>
             <Slider
@@ -912,8 +1440,9 @@ const Index = () => {
 
           <div className="pt-6 border-t border-primary space-y-4">
             <div className="text-center font-roboto text-sm neon-text-purple space-y-1">
-              <div>Заработано всего: {totalEarnings}₽</div>
-              <div>Машин разблокировано: {cars.filter(c => c.unlocked).length}/{cars.length}</div>
+              <div>Заработано всего: {totalEarnings.toLocaleString()}₽</div>
+              <div>Машин: {cars.filter(c => c.unlocked).length}/{cars.length}</div>
+              <div>Устройство: {isMobile ? 'Мобильное' : 'ПК'}</div>
             </div>
             <Button 
               onClick={resetProgress}
@@ -933,6 +1462,7 @@ const Index = () => {
       {currentSection === 'home' && renderHome()}
       {currentSection === 'garage' && renderGarage()}
       {currentSection === 'city' && renderCity()}
+      {currentSection === 'multiplayer' && renderMultiplayer()}
       {currentSection === 'leaderboard' && renderLeaderboard()}
       {currentSection === 'achievements' && renderAchievements()}
       {currentSection === 'settings' && renderSettings()}

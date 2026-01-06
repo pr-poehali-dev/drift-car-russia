@@ -1184,16 +1184,735 @@ const Index = () => {
     </div>
   );
 
-  // Остальные функции рендеринга остаются без изменений...
-  // (renderGarage, renderCity, renderMultiplayer, renderLeaderboard, renderAchievements, renderSettings)
-  // Они слишком большие, поэтому я их пропущу в этом ответе
+  const CarModel3D = ({ car, skin }: { car: Car; skin: CarSkin }) => {
+    const bodyColor = skin.color.startsWith('linear-gradient') ? '#ff6f00' : skin.color;
+    
+    return (
+      <div className="relative w-full h-48 flex items-center justify-center">
+        <svg viewBox="0 0 400 200" className="w-full h-full">
+          <defs>
+            <linearGradient id={`bodyGradient-${car.id}-${skin.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style={{ stopColor: bodyColor, stopOpacity: 1 }} />
+              <stop offset="50%" style={{ stopColor: bodyColor, stopOpacity: 0.8 }} />
+              <stop offset="100%" style={{ stopColor: bodyColor, stopOpacity: 0.6 }} />
+            </linearGradient>
+            <filter id={`glow-${car.id}-${skin.id}`}>
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+            <linearGradient id="windowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style={{ stopColor: '#87ceeb', stopOpacity: 0.6 }} />
+              <stop offset="100%" style={{ stopColor: '#1e90ff', stopOpacity: 0.8 }} />
+            </linearGradient>
+          </defs>
+          
+          {car.category === 'russian' ? (
+            <>
+              <ellipse cx="120" cy="165" rx="25" ry="25" fill="#1a1a1a" stroke="#333" strokeWidth="3"/>
+              <ellipse cx="120" cy="165" rx="15" ry="15" fill="#444" stroke="#666" strokeWidth="2"/>
+              <circle cx="120" cy="165" r="5" fill="#888"/>
+              
+              <ellipse cx="280" cy="165" rx="25" ry="25" fill="#1a1a1a" stroke="#333" strokeWidth="3"/>
+              <ellipse cx="280" cy="165" rx="15" ry="15" fill="#444" stroke="#666" strokeWidth="2"/>
+              <circle cx="280" cy="165" r="5" fill="#888"/>
+              
+              <path d="M 80 140 Q 80 100 100 90 L 160 90 L 180 70 L 260 70 Q 280 70 290 90 L 320 90 Q 340 100 340 140 L 340 165 L 300 165 L 300 155 L 100 155 L 100 165 L 60 165 Z" 
+                    fill={`url(#bodyGradient-${car.id}-${skin.id})`} 
+                    stroke="#000" 
+                    strokeWidth="2"
+                    filter={`url(#glow-${car.id}-${skin.id})`}/>
+              
+              <path d="M 105 90 L 155 90 L 170 75 L 105 75 Z" fill="url(#windowGradient)" stroke="#000" strokeWidth="1.5"/>
+              <path d="M 175 75 L 255 75 L 270 90 L 175 90 Z" fill="url(#windowGradient)" stroke="#000" strokeWidth="1.5"/>
+              
+              <rect x="85" y="150" width="15" height="8" fill="#ffeb3b" stroke="#ffa000" strokeWidth="1" rx="2"/>
+              <rect x="300" y="150" width="15" height="8" fill="#f44336" stroke="#c62828" strokeWidth="1" rx="2"/>
+              
+              <rect x="290" y="135" width="30" height="12" fill="#1a1a1a" stroke="#333" strokeWidth="1" rx="2"/>
+              <rect x="80" y="135" width="30" height="12" fill="#1a1a1a" stroke="#333" strokeWidth="1" rx="2"/>
+              
+              <line x1="160" y1="85" x2="160" y2="95" stroke="#000" strokeWidth="2"/>
+              <line x1="180" y1="75" x2="180" y1="90" stroke="#000" strokeWidth="2"/>
+            </>
+          ) : (
+            <>
+              <ellipse cx="130" cy="170" rx="28" ry="28" fill="#1a1a1a" stroke="#333" strokeWidth="3"/>
+              <ellipse cx="130" cy="170" rx="18" ry="18" fill="#444" stroke="#666" strokeWidth="2"/>
+              <ellipse cx="130" cy="170" rx="12" ry="12" fill="#666"/>
+              <circle cx="130" cy="170" r="6" fill="#999"/>
+              
+              <ellipse cx="270" cy="170" rx="28" ry="28" fill="#1a1a1a" stroke="#333" strokeWidth="3"/>
+              <ellipse cx="270" cy="170" rx="18" ry="18" fill="#444" stroke="#666" strokeWidth="2"/>
+              <ellipse cx="270" cy="170" rx="12" ry="12" fill="#666"/>
+              <circle cx="270" cy="170" r="6" fill="#999"/>
+              
+              <path d="M 90 145 Q 90 90 110 75 L 150 75 L 170 55 L 250 55 Q 270 55 285 70 L 310 70 Q 330 80 330 120 L 335 145 Q 335 155 330 160 L 290 160 L 290 150 L 110 150 L 110 160 L 70 160 Q 65 155 65 145 Z" 
+                    fill={`url(#bodyGradient-${car.id}-${skin.id})`} 
+                    stroke="#000" 
+                    strokeWidth="2"
+                    filter={`url(#glow-${car.id}-${skin.id})`}/>
+              
+              <path d="M 115 75 L 145 75 L 165 60 L 115 60 Z" fill="url(#windowGradient)" stroke="#000" strokeWidth="1.5" opacity="0.9"/>
+              <path d="M 170 60 L 245 60 L 265 75 L 175 75 Z" fill="url(#windowGradient)" stroke="#000" strokeWidth="1.5" opacity="0.9"/>
+              
+              <ellipse cx="95" cy="145" rx="20" ry="8" fill="#ffeb3b" opacity="0.9"/>
+              <ellipse cx="305" cy="145" rx="20" ry="8" fill="#f44336" opacity="0.9"/>
+              
+              <path d="M 310 125 L 330 125 L 328 140 L 312 140 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1"/>
+              <path d="M 70 125 L 90 125 L 88 140 L 72 140 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1"/>
+              
+              <path d="M 200 50 L 220 50 L 218 58 L 202 58 Z" fill="#f44336" opacity="0.8"/>
+              
+              <line x1="165" y1="68" x2="165" y2="78" stroke="#000" strokeWidth="1.5" opacity="0.5"/>
+            </>
+          )}
+        </svg>
+      </div>
+    );
+  };
+
+  const renderGarage = () => (
+    <div className="min-h-screen p-4 md:p-8">
+      <Button
+        onClick={() => {
+          setCurrentSection('home');
+          playSound('button');
+        }}
+        className="mb-6 neon-border-cyan border-2 font-orbitron"
+      >
+        <Icon name="ArrowLeft" className="mr-2" />
+        Назад
+      </Button>
+
+      <div className="max-w-6xl mx-auto">
+        <h2 className="font-orbitron text-4xl neon-text-cyan mb-8 text-center">ГАРАЖ</h2>
+
+        <Tabs defaultValue="russian" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="russian" className="font-orbitron">Русские машины</TabsTrigger>
+            <TabsTrigger value="premium" className="font-orbitron">Суперкары</TabsTrigger>
+          </TabsList>
+
+          {['russian', 'premium'].map((category) => (
+            <TabsContent key={category} value={category} className="space-y-6">
+              {cars.filter(c => c.category === category).map((car) => {
+                const currentSkin = car.skins.find(s => s.id === car.selectedSkin) || car.skins[0];
+                
+                return (
+                  <Card key={car.id} className={`p-6 border-2 ${car.id === selectedCar ? 'neon-border-magenta' : 'neon-border-cyan'}`}>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="font-orbitron text-2xl neon-text-purple mb-4">{car.name}</h3>
+                        <CarModel3D car={car} skin={currentSkin} />
+                        
+                        {car.unlocked && (
+                          <div className="mt-4 space-y-2">
+                            <p className="font-roboto text-sm neon-text-cyan mb-2">Скины ({car.skins.filter(s => s.unlocked).length}/{car.skins.length})</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {car.skins.map((skin) => (
+                                <button
+                                  key={skin.id}
+                                  onClick={() => skin.unlocked ? selectSkin(car.id, skin.id) : skin.price > 0 && unlockSkin(car.id, skin.id)}
+                                  disabled={!skin.unlocked && credits < skin.price}
+                                  className={`h-16 rounded border-2 transition-all flex flex-col items-center justify-center ${
+                                    car.selectedSkin === skin.id ? 'neon-border-magenta scale-105' : 'border-muted'
+                                  } ${!skin.unlocked && 'opacity-50'}`}
+                                  style={{ backgroundColor: skin.color.startsWith('linear') ? '#ff6f00' : skin.color }}
+                                >
+                                  <span className="text-xs font-roboto text-white drop-shadow-lg">{skin.name}</span>
+                                  {!skin.unlocked && skin.price > 0 && (
+                                    <span className="text-xs font-orbitron text-white drop-shadow-lg">{skin.price}₽</span>
+                                  )}
+                                  {car.selectedSkin === skin.id && <span className="text-lg">✓</span>}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-4">
+                        {!car.unlocked ? (
+                          <div className="space-y-4">
+                            <div className="text-center">
+                              <p className="font-orbitron text-3xl neon-text-magenta mb-2">{car.price.toLocaleString()} ₽</p>
+                              <Button
+                                onClick={() => unlockCar(car.id)}
+                                disabled={credits < car.price}
+                                className="w-full h-16 text-xl font-orbitron neon-border-cyan border-2"
+                              >
+                                <Icon name="ShoppingCart" className="mr-2" size={24} />
+                                Купить
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div>
+                              <div className="flex justify-between mb-2">
+                                <span className="font-roboto neon-text-cyan">Скорость: {car.speed} км/ч</span>
+                                <span className="font-roboto neon-text-purple">{car.maxSpeed} км/ч</span>
+                              </div>
+                              <Progress value={(car.speed / car.maxSpeed) * 100} className="h-3 mb-2" />
+                              <Button
+                                onClick={() => upgradeCar(car.id, 'speed')}
+                                disabled={car.speed >= car.maxSpeed || credits < (car.category === 'premium' ? 5000 : 500)}
+                                className="w-full font-orbitron"
+                                size="sm"
+                              >
+                                Улучшить ({car.category === 'premium' ? '5000' : '500'}₽)
+                              </Button>
+                            </div>
+
+                            <div>
+                              <div className="flex justify-between mb-2">
+                                <span className="font-roboto neon-text-cyan">Управление: {car.handling}</span>
+                                <span className="font-roboto neon-text-purple">{car.maxHandling}</span>
+                              </div>
+                              <Progress value={(car.handling / car.maxHandling) * 100} className="h-3 mb-2" />
+                              <Button
+                                onClick={() => upgradeCar(car.id, 'handling')}
+                                disabled={car.handling >= car.maxHandling || credits < (car.category === 'premium' ? 5000 : 500)}
+                                className="w-full font-orbitron"
+                                size="sm"
+                              >
+                                Улучшить ({car.category === 'premium' ? '5000' : '500'}₽)
+                              </Button>
+                            </div>
+
+                            <div>
+                              <div className="flex justify-between mb-2">
+                                <span className="font-roboto neon-text-cyan">Ускорение: {car.acceleration}</span>
+                                <span className="font-roboto neon-text-purple">{car.maxAcceleration}</span>
+                              </div>
+                              <Progress value={(car.acceleration / car.maxAcceleration) * 100} className="h-3 mb-2" />
+                              <Button
+                                onClick={() => upgradeCar(car.id, 'acceleration')}
+                                disabled={car.acceleration >= car.maxAcceleration || credits < (car.category === 'premium' ? 5000 : 500)}
+                                className="w-full font-orbitron"
+                                size="sm"
+                              >
+                                Улучшить ({car.category === 'premium' ? '5000' : '500'}₽)
+                              </Button>
+                            </div>
+
+                            <Button
+                              onClick={() => {
+                                setSelectedCar(car.id);
+                                playSound('button');
+                                toast({ title: `🚗 ${car.name}`, description: 'Выбрана для поездки' });
+                              }}
+                              disabled={car.id === selectedCar}
+                              className="w-full h-14 text-lg font-orbitron neon-border-magenta border-2"
+                            >
+                              {car.id === selectedCar ? '✓ Выбрана' : 'Выбрать'}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
+    </div>
+  );
+
+  const renderCity = () => {
+    const currentCar = cars.find(c => c.id === selectedCar);
+    const currentSkin = currentCar?.skins.find(s => s.id === currentCar.selectedSkin);
+    
+    return (
+      <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
+        <div className="absolute inset-0" style={{ perspective: '800px' }}>
+          {Array.from({ length: 50 }).map((_, i) => {
+            const offsetY = ((i * 40 + roadOffset) % 2000) - 500;
+            const scale = Math.max(0.2, 1 - offsetY / 2000);
+            const opacity = Math.max(0.1, scale);
+            
+            return (
+              <div
+                key={i}
+                className="absolute left-1/2 -translate-x-1/2"
+                style={{
+                  bottom: `${offsetY}px`,
+                  transform: `translateX(-50%) scale(${scale})`,
+                  opacity: opacity,
+                  zIndex: Math.floor(scale * 100),
+                }}
+              >
+                <div className="flex gap-4">
+                  <div className="w-20 h-32 neon-border-cyan border opacity-30" style={{ backgroundColor: '#1a1a3e' }}></div>
+                  <div className="w-[600px] h-2 bg-gray-600"></div>
+                  <div className="w-20 h-32 neon-border-magenta border opacity-30" style={{ backgroundColor: '#3e1a1a' }}></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="absolute top-8 left-8 z-20 space-y-4">
+          <Card className="p-4 bg-card/90 backdrop-blur border-2 neon-border-cyan">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <Icon name="Gauge" className="neon-text-magenta" size={32} />
+                <span className="font-orbitron text-3xl neon-text-cyan">{Math.abs(currentSpeed).toFixed(0)} км/ч</span>
+              </div>
+              {isDrifting && (
+                <div className="animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <Icon name="Zap" className="neon-text-magenta" size={24} />
+                    <span className="font-orbitron text-xl neon-text-purple">Дрифт: {currentDriftScore.toFixed(0)}</span>
+                  </div>
+                  {driftCombo > 1 && (
+                    <Badge className="bg-primary font-orbitron">x{driftCombo.toFixed(1)} COMBO!</Badge>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Icon name="Coins" className="neon-text-cyan" size={20} />
+                <span className="font-orbitron text-lg neon-text-purple">{credits.toLocaleString()} ₽</span>
+              </div>
+              <div className="text-sm font-roboto neon-text-cyan">
+                {currentCar?.name} • {currentSkin?.name}
+              </div>
+              {isMultiplayer && (
+                <div className="text-sm font-roboto neon-text-magenta">
+                  <Icon name="Users" size={16} className="inline mr-1" />
+                  Игроков: {players.length + 1}
+                </div>
+              )}
+            </div>
+          </Card>
+
+          <Button
+            onClick={() => setCurrentSection('home')}
+            className="neon-border-cyan border-2 font-orbitron"
+          >
+            <Icon name="Home" className="mr-2" />
+            Меню (ESC)
+          </Button>
+        </div>
+
+        {isMobile && (
+          <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-between px-8">
+            <div className="flex flex-col gap-4">
+              <Button
+                onTouchStart={() => setMobileControls(prev => ({ ...prev, gas: true }))}
+                onTouchEnd={() => setMobileControls(prev => ({ ...prev, gas: false }))}
+                className="w-20 h-20 rounded-full neon-border-cyan border-2 text-2xl font-orbitron"
+              >
+                ↑
+              </Button>
+              <Button
+                onTouchStart={() => setMobileControls(prev => ({ ...prev, brake: true }))}
+                onTouchEnd={() => setMobileControls(prev => ({ ...prev, brake: false }))}
+                className="w-20 h-20 rounded-full neon-border-magenta border-2 text-2xl font-orbitron"
+              >
+                ↓
+              </Button>
+            </div>
+            <div className="flex gap-4">
+              <Button
+                onTouchStart={() => setMobileControls(prev => ({ ...prev, left: true }))}
+                onTouchEnd={() => setMobileControls(prev => ({ ...prev, left: false }))}
+                className="w-20 h-20 rounded-full neon-border-cyan border-2 text-2xl font-orbitron"
+              >
+                ←
+              </Button>
+              <Button
+                onTouchStart={() => setMobileControls(prev => ({ ...prev, right: true }))}
+                onTouchEnd={() => setMobileControls(prev => ({ ...prev, right: false }))}
+                className="w-20 h-20 rounded-full neon-border-cyan border-2 text-2xl font-orbitron"
+              >
+                →
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!isMobile && (
+          <div className="absolute bottom-8 right-8 z-20">
+            <Card className="p-4 bg-card/90 backdrop-blur border-2 neon-border-purple">
+              <p className="font-orbitron text-sm neon-text-cyan">Управление:</p>
+              <p className="font-roboto text-xs text-muted-foreground">W/↑ - Газ</p>
+              <p className="font-roboto text-xs text-muted-foreground">S/↓ - Тормоз</p>
+              <p className="font-roboto text-xs text-muted-foreground">A/← D/→ - Поворот</p>
+              <p className="font-roboto text-xs text-muted-foreground">Пробел - Ручник</p>
+            </Card>
+          </div>
+        )}
+
+        <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 z-10">
+          {currentCar && currentSkin && (
+            <div style={{ transform: `rotate(${carRotation}deg) scale(1.5)` }}>
+              <CarModel3D car={currentCar} skin={currentSkin} />
+            </div>
+          )}
+        </div>
+
+        {players.map((player) => {
+          const playerCar = cars.find(c => c.id === player.car);
+          const playerSkin = playerCar?.skins.find(s => s.id === player.skin);
+          
+          return playerCar && playerSkin ? (
+            <div
+              key={player.id}
+              className="absolute z-5"
+              style={{
+                left: `${player.position.x}%`,
+                top: `${player.position.y}%`,
+                transform: `rotate(${player.rotation}deg) scale(0.8)`,
+                opacity: 0.7,
+              }}
+            >
+              <CarModel3D car={playerCar} skin={playerSkin} />
+              <div className="text-xs font-orbitron neon-text-cyan text-center">{player.name}</div>
+            </div>
+          ) : null;
+        })}
+      </div>
+    );
+  };
+
+  const renderMultiplayer = () => (
+    <div className="min-h-screen p-4 md:p-8">
+      <Button
+        onClick={() => {
+          setCurrentSection('home');
+          playSound('button');
+        }}
+        className="mb-6 neon-border-cyan border-2 font-orbitron"
+      >
+        <Icon name="ArrowLeft" className="mr-2" />
+        Назад
+      </Button>
+
+      <div className="max-w-2xl mx-auto">
+        <h2 className="font-orbitron text-4xl neon-text-cyan mb-8 text-center">МУЛЬТИПЛЕЕР</h2>
+
+        <div className="space-y-6">
+          <Card className="p-6 border-2 neon-border-cyan">
+            <h3 className="font-orbitron text-2xl neon-text-magenta mb-4">Ваше имя</h3>
+            <Input
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder="Введите имя"
+              className="font-orbitron neon-border-cyan border-2 text-lg"
+              maxLength={20}
+            />
+          </Card>
+
+          <Card className="p-6 border-2 neon-border-magenta">
+            <h3 className="font-orbitron text-2xl neon-text-cyan mb-4">Создать комнату</h3>
+            <Button
+              onClick={createRoom}
+              className="w-full h-16 text-xl font-orbitron neon-border-cyan border-2"
+            >
+              <Icon name="Plus" className="mr-2" size={24} />
+              Создать сервер (5 игроков)
+            </Button>
+          </Card>
+
+          <Card className="p-6 border-2 neon-border-purple">
+            <h3 className="font-orbitron text-2xl neon-text-magenta mb-4">Присоединиться</h3>
+            <div className="space-y-4">
+              <Input
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                placeholder="КОД КОМНАТЫ"
+                className="font-orbitron neon-border-magenta border-2 text-2xl text-center uppercase"
+                maxLength={6}
+              />
+              <Button
+                onClick={() => joinRoom(roomCode)}
+                disabled={roomCode.length !== 6}
+                className="w-full h-16 text-xl font-orbitron neon-border-cyan border-2"
+              >
+                <Icon name="LogIn" className="mr-2" size={24} />
+                Войти в комнату
+              </Button>
+            </div>
+          </Card>
+
+          {isMultiplayer && roomCode && (
+            <Card className="p-6 border-2 neon-border-cyan animate-neon-pulse">
+              <div className="text-center space-y-4">
+                <h3 className="font-orbitron text-2xl neon-text-cyan">КОМНАТА АКТИВНА</h3>
+                <div className="text-4xl font-orbitron neon-text-magenta">{roomCode}</div>
+                <p className="font-roboto text-sm text-muted-foreground">
+                  Игроков в комнате: {players.length + 1}/5
+                </p>
+                <Button
+                  onClick={() => {
+                    setIsMultiplayer(false);
+                    setRoomCode('');
+                    setPlayers([]);
+                  }}
+                  variant="destructive"
+                  className="w-full font-orbitron"
+                >
+                  <Icon name="X" className="mr-2" />
+                  Покинуть комнату
+                </Button>
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderLeaderboard = () => (
+    <div className="min-h-screen p-4 md:p-8">
+      <Button
+        onClick={() => {
+          setCurrentSection('home');
+          playSound('button');
+        }}
+        className="mb-6 neon-border-cyan border-2 font-orbitron"
+      >
+        <Icon name="ArrowLeft" className="mr-2" />
+        Назад
+      </Button>
+
+      <div className="max-w-4xl mx-auto">
+        <h2 className="font-orbitron text-4xl neon-text-cyan mb-8 text-center">ЛИДЕРБОРД</h2>
+
+        <div className="space-y-4">
+          {leaderboard.map((entry) => (
+            <Card
+              key={entry.rank}
+              className={`p-6 border-2 transition-all hover:scale-105 ${
+                entry.rank === 1
+                  ? 'neon-border-magenta bg-gradient-to-r from-card to-secondary/20'
+                  : entry.rank <= 3
+                  ? 'neon-border-cyan'
+                  : 'border-muted'
+              }`}
+            >
+              <div className="flex items-center gap-6">
+                <div className="flex-shrink-0">
+                  {entry.rank === 1 && <Icon name="Crown" size={48} className="neon-text-magenta" />}
+                  {entry.rank === 2 && <Icon name="Trophy" size={48} className="neon-text-cyan" />}
+                  {entry.rank === 3 && <Icon name="Award" size={48} className="neon-text-purple" />}
+                  {entry.rank > 3 && (
+                    <div className="w-12 h-12 flex items-center justify-center">
+                      <span className="font-orbitron text-2xl text-muted-foreground">{entry.rank}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-orbitron text-xl neon-text-purple">{entry.name}</h3>
+                  <p className="font-roboto text-sm text-muted-foreground">{entry.car}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-orbitron text-2xl neon-text-cyan">{entry.score.toLocaleString()}</p>
+                  <p className="font-roboto text-xs text-muted-foreground">очков</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <Card className="mt-8 p-6 border-2 neon-border-purple">
+          <div className="text-center">
+            <h3 className="font-orbitron text-xl neon-text-cyan mb-2">Ваша статистика</h3>
+            <div className="grid grid-cols-3 gap-4 mt-4">
+              <div>
+                <p className="font-orbitron text-2xl neon-text-magenta">{credits.toLocaleString()}</p>
+                <p className="font-roboto text-xs text-muted-foreground">Рублей</p>
+              </div>
+              <div>
+                <p className="font-orbitron text-2xl neon-text-cyan">{totalDrifts}</p>
+                <p className="font-roboto text-xs text-muted-foreground">Дрифтов</p>
+              </div>
+              <div>
+                <p className="font-orbitron text-2xl neon-text-purple">{totalDistance.toFixed(1)} км</p>
+                <p className="font-roboto text-xs text-muted-foreground">Пробег</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderAchievements = () => (
+    <div className="min-h-screen p-4 md:p-8">
+      <Button
+        onClick={() => {
+          setCurrentSection('home');
+          playSound('button');
+        }}
+        className="mb-6 neon-border-cyan border-2 font-orbitron"
+      >
+        <Icon name="ArrowLeft" className="mr-2" />
+        Назад
+      </Button>
+
+      <div className="max-w-4xl mx-auto">
+        <h2 className="font-orbitron text-4xl neon-text-cyan mb-8 text-center">ДОСТИЖЕНИЯ</h2>
+
+        <div className="mb-6 text-center">
+          <p className="font-orbitron text-xl neon-text-magenta">
+            {achievements.filter(a => a.completed).length} / {achievements.length}
+          </p>
+          <Progress 
+            value={(achievements.filter(a => a.completed).length / achievements.length) * 100} 
+            className="h-4 mt-2"
+          />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {achievements.map((achievement) => (
+            <Card
+              key={achievement.id}
+              className={`p-6 border-2 transition-all ${
+                achievement.completed
+                  ? 'neon-border-cyan'
+                  : 'border-muted opacity-50'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <Icon
+                  name={achievement.icon as any}
+                  size={48}
+                  className={achievement.completed ? 'neon-text-magenta' : 'text-muted-foreground'}
+                />
+                <div className="flex-1">
+                  <h3 className="font-orbitron text-xl neon-text-purple mb-2">{achievement.title}</h3>
+                  <p className="font-roboto text-sm text-muted-foreground">{achievement.description}</p>
+                  {achievement.completed && (
+                    <Badge className="mt-3 bg-primary font-orbitron">✓ Получено</Badge>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSettings = () => (
+    <div className="min-h-screen p-4 md:p-8">
+      <Button
+        onClick={() => {
+          setCurrentSection('home');
+          playSound('button');
+        }}
+        className="mb-6 neon-border-cyan border-2 font-orbitron"
+      >
+        <Icon name="ArrowLeft" className="mr-2" />
+        Назад
+      </Button>
+
+      <div className="max-w-2xl mx-auto">
+        <h2 className="font-orbitron text-4xl neon-text-cyan mb-8 text-center">НАСТРОЙКИ</h2>
+
+        <div className="space-y-6">
+          <Card className="p-6 border-2 neon-border-cyan">
+            <h3 className="font-orbitron text-xl neon-text-magenta mb-4">Звук</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="font-roboto text-sm neon-text-cyan mb-2 block">
+                  Музыка: {settings.music}%
+                </label>
+                <Slider
+                  value={[settings.music]}
+                  onValueChange={([value]) => setSettings({ ...settings, music: value })}
+                  max={100}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="font-roboto text-sm neon-text-cyan mb-2 block">
+                  Эффекты: {settings.sfx}%
+                </label>
+                <Slider
+                  value={[settings.sfx]}
+                  onValueChange={([value]) => setSettings({ ...settings, sfx: value })}
+                  max={100}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 border-2 neon-border-magenta">
+            <h3 className="font-orbitron text-xl neon-text-cyan mb-4">Управление</h3>
+            <div>
+              <label className="font-roboto text-sm neon-text-cyan mb-2 block">
+                Чувствительность: {settings.sensitivity}%
+              </label>
+              <Slider
+                value={[settings.sensitivity]}
+                onValueChange={([value]) => setSettings({ ...settings, sensitivity: value })}
+                max={100}
+                step={1}
+                className="w-full"
+              />
+            </div>
+          </Card>
+
+          <Card className="p-6 border-2 neon-border-purple">
+            <h3 className="font-orbitron text-xl neon-text-magenta mb-4">Прогресс</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between font-roboto text-sm">
+                <span className="neon-text-cyan">Рублей заработано:</span>
+                <span className="neon-text-purple">{totalEarnings.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between font-roboto text-sm">
+                <span className="neon-text-cyan">Машин куплено:</span>
+                <span className="neon-text-purple">{cars.filter(c => c.unlocked).length}/{cars.length}</span>
+              </div>
+              <div className="flex justify-between font-roboto text-sm">
+                <span className="neon-text-cyan">Достижений:</span>
+                <span className="neon-text-purple">{achievements.filter(a => a.completed).length}/{achievements.length}</span>
+              </div>
+              <div className="flex justify-between font-roboto text-sm">
+                <span className="neon-text-cyan">Дрифтов:</span>
+                <span className="neon-text-purple">{totalDrifts}</span>
+              </div>
+              <div className="flex justify-between font-roboto text-sm">
+                <span className="neon-text-cyan">Пробег:</span>
+                <span className="neon-text-purple">{totalDistance.toFixed(1)} км</span>
+              </div>
+              <Button
+                onClick={resetProgress}
+                variant="destructive"
+                className="w-full mt-4 font-orbitron"
+              >
+                <Icon name="Trash2" className="mr-2" />
+                Сбросить весь прогресс
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background font-roboto">
       {currentSection === 'home' && renderHome()}
+      {currentSection === 'garage' && renderGarage()}
+      {currentSection === 'city' && renderCity()}
+      {currentSection === 'multiplayer' && renderMultiplayer()}
+      {currentSection === 'leaderboard' && renderLeaderboard()}
+      {currentSection === 'achievements' && renderAchievements()}
+      {currentSection === 'settings' && renderSettings()}
       {currentSection === 'admin' && isAdmin && renderAdmin()}
       {currentSection === 'tasks' && renderTasks()}
-      {/* Остальные секции... */}
     </div>
   );
 };

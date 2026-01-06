@@ -51,10 +51,10 @@ const INITIAL_CARS: Car[] = [
   {
     id: 'uaz',
     name: 'УАЗ Hunter',
-    speed: 45,
+    speed: 120,
     handling: 30,
     acceleration: 40,
-    maxSpeed: 100,
+    maxSpeed: 235,
     maxHandling: 100,
     maxAcceleration: 100,
     price: 0,
@@ -63,10 +63,10 @@ const INITIAL_CARS: Car[] = [
   {
     id: 'lada',
     name: 'Lada 2107',
-    speed: 55,
+    speed: 140,
     handling: 50,
     acceleration: 60,
-    maxSpeed: 100,
+    maxSpeed: 235,
     maxHandling: 100,
     maxAcceleration: 100,
     price: 2000,
@@ -75,10 +75,10 @@ const INITIAL_CARS: Car[] = [
   {
     id: 'zhiguli',
     name: 'Жигули 2106',
-    speed: 60,
+    speed: 150,
     handling: 55,
     acceleration: 65,
-    maxSpeed: 100,
+    maxSpeed: 235,
     maxHandling: 100,
     maxAcceleration: 100,
     price: 3500,
@@ -87,10 +87,10 @@ const INITIAL_CARS: Car[] = [
   {
     id: 'niva',
     name: 'Lada Niva',
-    speed: 50,
+    speed: 130,
     handling: 70,
     acceleration: 55,
-    maxSpeed: 100,
+    maxSpeed: 235,
     maxHandling: 100,
     maxAcceleration: 100,
     price: 4500,
@@ -99,10 +99,10 @@ const INITIAL_CARS: Car[] = [
   {
     id: 'vaz',
     name: 'ВАЗ 2114',
-    speed: 75,
+    speed: 180,
     handling: 65,
     acceleration: 80,
-    maxSpeed: 100,
+    maxSpeed: 235,
     maxHandling: 100,
     maxAcceleration: 100,
     price: 6000,
@@ -116,17 +116,23 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
   { id: '3', title: 'Король дрифта', description: 'Наберите 10000 очков за один дрифт', completed: false, icon: 'Crown' },
   { id: '4', title: 'Тюнер', description: 'Максимально улучшите любой автомобиль', completed: false, icon: 'Wrench' },
   { id: '5', title: 'Легенда', description: 'Займите 1 место в лидерборде', completed: false, icon: 'Star' },
+  { id: '6', title: 'Скорость света', description: 'Разгонитесь до 235 км/ч', completed: false, icon: 'Rocket' },
+  { id: '7', title: 'Миллионер', description: 'Заработайте 50000 рублей', completed: false, icon: 'BadgeDollarSign' },
 ];
 
 const Index = () => {
   const { toast } = useToast();
-  const [currentSection, setCurrentSection] = useState<'home' | 'garage' | 'city' | 'leaderboard' | 'achievements' | 'settings'>('home');
+  const [currentSection, setCurrentSection] = useState<'home' | 'garage' | 'city' | 'leaderboard' | 'achievements' | 'settings'>('city');
   const [selectedCar, setSelectedCar] = useState<string>('lada');
   const [credits, setCredits] = useState(5000);
-  const [driftScore, setDriftScore] = useState(0);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [currentSpeed, setCurrentSpeed] = useState(0);
+  const [currentDriftScore, setCurrentDriftScore] = useState(0);
+  const [driftCombo, setDriftCombo] = useState(0);
   const [isDrifting, setIsDrifting] = useState(false);
-  const [carPosition, setCarPosition] = useState({ x: 50, y: 50 });
+  const [carPosition, setCarPosition] = useState({ x: 50, y: 50, z: 0 });
   const [carRotation, setCarRotation] = useState(0);
+  const [roadOffset, setRoadOffset] = useState(0);
   const [settings, setSettings] = useState({
     music: 70,
     sfx: 80,
@@ -138,8 +144,8 @@ const Index = () => {
 
   const keysPressed = useRef<Set<string>>(new Set());
   const gameLoopRef = useRef<number>();
-  const musicRef = useRef<HTMLAudioElement | null>(null);
-  const driftSoundRef = useRef<HTMLAudioEngine | null>(null);
+  const driftTimerRef = useRef<NodeJS.Timeout>();
+  const lastDriftRewardRef = useRef(0);
 
   const [leaderboard] = useState<LeaderboardEntry[]>([
     { rank: 1, name: 'DRIFT_KING_77', score: 25680, car: 'ВАЗ 2114' },
@@ -177,19 +183,14 @@ const Index = () => {
   }, [cars, credits, selectedCar, settings, achievements]);
 
   useEffect(() => {
-    if (!musicRef.current) {
-      musicRef.current = new Audio();
-      musicRef.current.loop = true;
-      musicRef.current.volume = settings.music / 100;
-    }
-    musicRef.current.volume = settings.music / 100;
-  }, [settings.music]);
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      if (['w', 'a', 's', 'd'].includes(key)) {
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright', ' '].includes(key)) {
+        e.preventDefault();
         keysPressed.current.add(key);
+      }
+      if (key === 'escape' && currentSection === 'city') {
+        setCurrentSection('home');
       }
     };
 
@@ -205,7 +206,7 @@ const Index = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [currentSection]);
 
   const unlockAchievement = (achievementId: string) => {
     const achievement = achievements.find(a => a.id === achievementId);
@@ -221,7 +222,7 @@ const Index = () => {
     }
   };
 
-  const playSound = (type: 'drift' | 'upgrade' | 'achievement' | 'button') => {
+  const playSound = (type: 'drift' | 'upgrade' | 'achievement' | 'button' | 'reward') => {
     if (settings.sfx === 0) return;
     
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -235,7 +236,7 @@ const Index = () => {
     
     switch (type) {
       case 'drift':
-        oscillator.frequency.value = 200;
+        oscillator.frequency.value = 150;
         oscillator.type = 'sawtooth';
         break;
       case 'upgrade':
@@ -250,56 +251,120 @@ const Index = () => {
         oscillator.frequency.value = 400;
         oscillator.type = 'square';
         break;
+      case 'reward':
+        oscillator.frequency.value = 1200;
+        oscillator.type = 'sine';
+        break;
     }
     
     oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.1);
+    oscillator.stop(audioContext.currentTime + 0.15);
+  };
+
+  const calculateDriftReward = (score: number): number => {
+    if (score >= 3000) return 3000;
+    if (score >= 2000) return 1000;
+    if (score >= 1000) return 500;
+    return 0;
   };
 
   const updateCarPosition = () => {
     const car = cars.find(c => c.id === selectedCar);
     if (!car) return;
 
-    let newX = carPosition.x;
-    let newY = carPosition.y;
+    let targetSpeed = 0;
     let newRotation = carRotation;
     let isDriftingNow = false;
 
-    const speed = car.speed / 100 * (settings.sensitivity / 50);
-    const handling = car.handling / 100 * 5;
+    const maxSpeedKmh = car.speed;
+    const acceleration = car.acceleration / 10;
+    const handling = car.handling / 50;
 
-    if (keysPressed.current.has('w')) {
-      const rad = (newRotation * Math.PI) / 180;
-      newX += Math.sin(rad) * speed;
-      newY -= Math.cos(rad) * speed;
+    if (keysPressed.current.has('w') || keysPressed.current.has('arrowup')) {
+      targetSpeed = maxSpeedKmh;
     }
-    if (keysPressed.current.has('s')) {
-      const rad = (newRotation * Math.PI) / 180;
-      newX -= Math.sin(rad) * speed * 0.5;
-      newY += Math.cos(rad) * speed * 0.5;
+    if (keysPressed.current.has('s') || keysPressed.current.has('arrowdown')) {
+      targetSpeed = -maxSpeedKmh * 0.5;
     }
-    if (keysPressed.current.has('a')) {
-      newRotation -= handling;
-      if (keysPressed.current.has('w') || keysPressed.current.has('s')) {
+
+    const speedDiff = targetSpeed - currentSpeed;
+    const newSpeed = currentSpeed + Math.sign(speedDiff) * Math.min(Math.abs(speedDiff), acceleration);
+    setCurrentSpeed(newSpeed);
+
+    if (keysPressed.current.has('a') || keysPressed.current.has('arrowleft')) {
+      const turnSpeed = handling * (Math.abs(currentSpeed) / maxSpeedKmh);
+      newRotation -= turnSpeed;
+      if (Math.abs(currentSpeed) > maxSpeedKmh * 0.3) {
         isDriftingNow = true;
       }
     }
-    if (keysPressed.current.has('d')) {
-      newRotation += handling;
-      if (keysPressed.current.has('w') || keysPressed.current.has('s')) {
+    if (keysPressed.current.has('d') || keysPressed.current.has('arrowright')) {
+      const turnSpeed = handling * (Math.abs(currentSpeed) / maxSpeedKmh);
+      newRotation += turnSpeed;
+      if (Math.abs(currentSpeed) > maxSpeedKmh * 0.3) {
         isDriftingNow = true;
       }
     }
 
-    newX = Math.max(5, Math.min(95, newX));
-    newY = Math.max(5, Math.min(95, newY));
+    if (keysPressed.current.has(' ')) {
+      const newSpeedWithBrake = currentSpeed * 0.95;
+      setCurrentSpeed(newSpeedWithBrake);
+    }
 
-    setCarPosition({ x: newX, y: newY });
     setCarRotation(newRotation % 360);
+    setRoadOffset(prev => (prev + currentSpeed * 0.1) % 1000);
 
-    if (isDriftingNow) {
-      const driftPoints = Math.floor(Math.random() * 20) + 5;
-      setDriftScore(prev => prev + driftPoints);
+    if (isDriftingNow && Math.abs(currentSpeed) > 0) {
+      const driftPoints = Math.floor(Math.abs(currentSpeed) / 10) * (1 + driftCombo * 0.1);
+      setCurrentDriftScore(prev => prev + driftPoints);
+      setDriftCombo(prev => Math.min(prev + 1, 10));
+      
+      if (!isDrifting) {
+        setIsDrifting(true);
+        playSound('drift');
+        if (!achievements.find(a => a.id === '1')?.completed) {
+          unlockAchievement('1');
+        }
+      }
+
+      if (driftTimerRef.current) {
+        clearTimeout(driftTimerRef.current);
+      }
+
+      driftTimerRef.current = setTimeout(() => {
+        const finalScore = currentDriftScore;
+        const reward = calculateDriftReward(finalScore);
+        
+        if (reward > 0 && finalScore !== lastDriftRewardRef.current) {
+          setCredits(prev => prev + reward);
+          setTotalEarnings(prev => prev + reward);
+          lastDriftRewardRef.current = finalScore;
+          playSound('reward');
+          
+          toast({
+            title: `💰 +${reward}₽`,
+            description: `Дрифт на ${finalScore.toFixed(0)} очков!`,
+          });
+
+          if (finalScore >= 10000) {
+            unlockAchievement('3');
+          }
+        }
+
+        setCurrentDriftScore(0);
+        setIsDrifting(false);
+        setDriftCombo(0);
+      }, 1500);
+    } else if (isDrifting && !isDriftingNow) {
+      setDriftCombo(prev => Math.max(0, prev - 1));
+    }
+
+    if (Math.abs(currentSpeed) >= maxSpeedKmh * 0.99 && maxSpeedKmh >= 235) {
+      unlockAchievement('6');
+    }
+
+    if (totalEarnings >= 50000) {
+      unlockAchievement('7');
     }
   };
 
@@ -312,7 +377,7 @@ const Index = () => {
         }
       };
     }
-  }, [currentSection, carPosition, carRotation, selectedCar, settings.sensitivity]);
+  }, [currentSection, currentSpeed, carRotation, selectedCar, isDrifting, currentDriftScore, driftCombo]);
 
   const upgradeCar = (carId: string, stat: 'speed' | 'handling' | 'acceleration') => {
     const car = cars.find(c => c.id === carId);
@@ -331,7 +396,12 @@ const Index = () => {
       setCredits(credits - upgradeCost);
       playSound('upgrade');
 
-      const upgradedCar = cars.find(c => c.id === carId);
+      const updatedCars = cars.map(c => 
+        c.id === carId 
+          ? { ...c, [stat]: Math.min(currentValue + 10, maxValue) }
+          : c
+      );
+      const upgradedCar = updatedCars.find(c => c.id === carId);
       if (upgradedCar && upgradedCar.speed === maxValue && upgradedCar.handling === maxValue && upgradedCar.acceleration === maxValue) {
         unlockAchievement('4');
       }
@@ -355,35 +425,13 @@ const Index = () => {
     }
   };
 
-  const startDrift = () => {
-    setIsDrifting(true);
-    playSound('drift');
-    
-    const driftInterval = setInterval(() => {
-      setDriftScore(prev => prev + Math.floor(Math.random() * 50) + 10);
-    }, 100);
-
-    setTimeout(() => {
-      setIsDrifting(false);
-      clearInterval(driftInterval);
-      const earnedCredits = Math.floor(driftScore / 10);
-      setCredits(prev => prev + earnedCredits);
-      
-      if (driftScore >= 10000) {
-        unlockAchievement('3');
-      }
-      if (!achievements.find(a => a.id === '1')?.completed) {
-        unlockAchievement('1');
-      }
-    }, 3000);
-  };
-
   const resetProgress = () => {
     setCars(INITIAL_CARS);
     setCredits(5000);
     setSelectedCar('lada');
     setAchievements(INITIAL_ACHIEVEMENTS);
     setSettings({ music: 70, sfx: 80, sensitivity: 50 });
+    setTotalEarnings(0);
     localStorage.removeItem('driftCarRussiaState');
     toast({
       title: '🔄 Прогресс сброшен',
@@ -398,20 +446,20 @@ const Index = () => {
           DRIFT CAR RUSSIA
         </h1>
         <p className="font-roboto text-2xl neon-text-magenta">
-          Свободное вождение • Киберпанк • Неоновые ночи
+          Открытый мир • Киберпанк • Неоновые ночи
         </p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-12">
-          {['garage', 'city', 'leaderboard', 'achievements', 'settings'].map((section) => {
+          {['city', 'garage', 'leaderboard', 'achievements', 'settings'].map((section) => {
             const icons = {
               garage: 'Car',
-              city: 'Building',
+              city: 'Gamepad2',
               leaderboard: 'Trophy',
               achievements: 'Award',
               settings: 'Settings',
             };
             const labels = {
               garage: 'Гараж',
-              city: 'Город',
+              city: 'Открытый мир',
               leaderboard: 'Лидерборд',
               achievements: 'Достижения',
               settings: 'Настройки',
@@ -455,7 +503,7 @@ const Index = () => {
           className="mb-6 neon-border-cyan border-2 font-orbitron"
         >
           <Icon name="ArrowLeft" className="mr-2" />
-          Назад
+          Меню
         </Button>
         
         <div className="grid md:grid-cols-2 gap-8">
@@ -517,17 +565,17 @@ const Index = () => {
                 <div className="space-y-6">
                   <div>
                     <div className="flex justify-between mb-2">
-                      <span className="font-roboto neon-text-purple">Скорость</span>
-                      <span className="font-orbitron neon-text-cyan">{car.speed}/{car.maxSpeed}</span>
+                      <span className="font-roboto neon-text-purple">Макс. скорость</span>
+                      <span className="font-orbitron neon-text-cyan">{car.speed}/{car.maxSpeed} км/ч</span>
                     </div>
-                    <Progress value={car.speed} className="h-2" />
+                    <Progress value={(car.speed / car.maxSpeed) * 100} className="h-2" />
                     <Button
                       onClick={() => upgradeCar(car.id, 'speed')}
                       disabled={car.speed >= car.maxSpeed || credits < 500}
                       className="mt-2 w-full neon-border-magenta border font-orbitron"
                       size="sm"
                     >
-                      Улучшить (500₽)
+                      Улучшить +10 км/ч (500₽)
                     </Button>
                   </div>
 
@@ -582,107 +630,121 @@ const Index = () => {
     const car = cars.find(c => c.id === selectedCar);
     
     return (
-      <div className="min-h-screen p-8">
-        <Button
-          onClick={() => {
-            setCurrentSection('home');
-            playSound('button');
-          }}
-          className="mb-6 neon-border-cyan border-2 font-orbitron"
-        >
-          <Icon name="ArrowLeft" className="mr-2" />
-          Назад
-        </Button>
+      <div className="fixed inset-0 bg-background overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/10 to-secondary/20">
+          <div className="absolute inset-0" style={{ perspective: '400px' }}>
+            {[...Array(50)].map((_, i) => {
+              const offset = (roadOffset + i * 20) % 1000;
+              const zPos = i * 20;
+              const scale = 400 / (400 + zPos);
+              const yPos = 50 + (zPos * 0.3);
+              
+              return (
+                <div
+                  key={i}
+                  className="absolute left-1/2 transform -translate-x-1/2"
+                  style={{
+                    bottom: `${yPos}%`,
+                    width: `${100 * scale}%`,
+                    height: '8px',
+                    background: i % 2 === 0 ? 'rgba(0, 240, 255, 0.3)' : 'rgba(255, 0, 110, 0.3)',
+                    boxShadow: i % 2 === 0 
+                      ? '0 0 20px rgba(0, 240, 255, 0.5)'
+                      : '0 0 20px rgba(255, 0, 110, 0.5)',
+                  }}
+                />
+              );
+            })}
 
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="text-center">
-            <h2 className="font-orbitron text-4xl neon-text-cyan mb-2">НЕОНОВЫЙ ГОРОД</h2>
-            <p className="font-roboto text-lg neon-text-magenta">Управление: W A S D</p>
+            {[...Array(20)].map((_, i) => {
+              const offset = (roadOffset * 2 + i * 100) % 2000;
+              const side = i % 2 === 0 ? -30 : 130;
+              const zPos = (i * 100) % 1000;
+              const scale = 400 / (400 + zPos);
+              const yPos = 30 + (zPos * 0.4);
+              
+              return (
+                <div
+                  key={`building-${i}`}
+                  className="absolute"
+                  style={{
+                    left: `${side}%`,
+                    bottom: `${yPos}%`,
+                    width: `${80 * scale}px`,
+                    height: `${200 * scale}px`,
+                    background: 'linear-gradient(180deg, rgba(155, 135, 245, 0.3) 0%, rgba(0, 240, 255, 0.2) 100%)',
+                    border: '2px solid rgba(0, 240, 255, 0.5)',
+                    boxShadow: '0 0 30px rgba(0, 240, 255, 0.3)',
+                  }}
+                />
+              );
+            })}
           </div>
+        </div>
 
-          <Card className="p-8 border-2 neon-border-cyan relative overflow-hidden h-[500px]">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20"></div>
-            
-            <div
-              className="absolute w-12 h-12 flex items-center justify-center transition-all duration-75"
-              style={{
-                left: `${carPosition.x}%`,
-                top: `${carPosition.y}%`,
-                transform: `translate(-50%, -50%) rotate(${carRotation}deg)`,
-              }}
-            >
-              <Icon name="Car" size={48} className="neon-text-magenta" />
+        <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
+          <Button
+            onClick={() => {
+              setCurrentSection('home');
+              playSound('button');
+            }}
+            className="neon-border-cyan border-2 font-orbitron"
+            size="sm"
+          >
+            <Icon name="Menu" className="mr-2" size={16} />
+            ESC - Меню
+          </Button>
+
+          <Card className="p-4 bg-background/80 backdrop-blur border-2 neon-border-cyan">
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <div className="font-orbitron text-3xl neon-text-cyan">{Math.abs(currentSpeed).toFixed(0)}</div>
+                <div className="font-roboto text-xs neon-text-purple">км/ч</div>
+              </div>
+              <div className="text-center">
+                <div className="font-orbitron text-2xl neon-text-magenta">{credits}</div>
+                <div className="font-roboto text-xs neon-text-purple">рублей</div>
+              </div>
             </div>
-
-            {[...Array(20)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-1 h-20 bg-primary/30"
-                style={{
-                  left: `${(i * 5) % 100}%`,
-                  top: `${Math.floor(i / 20) * 25}%`,
-                }}
-              />
-            ))}
           </Card>
+        </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-6 border-2 neon-border-cyan">
-              <div className="text-center space-y-4">
-                <div className="font-orbitron text-6xl neon-text-cyan">
-                  {driftScore}
+        <div className="absolute bottom-4 left-4 right-4 z-10 space-y-4">
+          {isDrifting && (
+            <Card className="p-6 bg-background/90 backdrop-blur border-2 neon-border-magenta animate-pulse">
+              <div className="text-center space-y-2">
+                <div className="font-orbitron text-5xl neon-text-cyan">
+                  {currentDriftScore.toFixed(0)}
                 </div>
-                <p className="font-roboto neon-text-magenta">ОЧКИ ДРИФТА</p>
-                <Button
-                  onClick={startDrift}
-                  disabled={isDrifting}
-                  className="w-full h-16 text-xl font-orbitron neon-border-magenta border-2 hover:scale-105 transition-all"
-                >
-                  {isDrifting ? (
-                    <span className="animate-pulse">ДРИФТУЕМ...</span>
-                  ) : (
-                    <>
-                      <Icon name="Zap" className="mr-2" size={24} />
-                      АВТОДРИФТ
-                    </>
-                  )}
-                </Button>
-              </div>
-            </Card>
-
-            <Card className="p-6 border-2 neon-border-cyan">
-              <div className="space-y-4">
-                <h3 className="font-orbitron text-2xl neon-text-purple text-center">{car?.name}</h3>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="font-orbitron text-2xl neon-text-cyan">{credits}</div>
-                    <div className="font-roboto text-sm neon-text-purple">Кредиты</div>
-                  </div>
-                  <div>
-                    <div className="font-orbitron text-2xl neon-text-magenta">
-                      {achievements.filter(a => a.completed).length}/{achievements.length}
-                    </div>
-                    <div className="font-roboto text-sm neon-text-purple">Достижения</div>
-                  </div>
-                  <div>
-                    <div className="font-orbitron text-2xl neon-text-cyan">
-                      {cars.filter(c => c.unlocked).length}/{cars.length}
-                    </div>
-                    <div className="font-roboto text-sm neon-text-purple">Машины</div>
-                  </div>
+                <div className="font-roboto text-lg neon-text-magenta">
+                  ДРИФТ! x{driftCombo}
                 </div>
-                <div className="pt-4 border-t border-primary space-y-2">
-                  <div className="flex justify-between font-roboto text-sm">
-                    <span className="neon-text-cyan">Скорость: {car?.speed}</span>
-                    <span className="neon-text-magenta">Управление: {car?.handling}</span>
-                  </div>
-                  <div className="flex justify-center">
-                    <span className="neon-text-purple font-roboto text-sm">Ускорение: {car?.acceleration}</span>
-                  </div>
+                <div className="font-roboto text-sm neon-text-purple">
+                  {currentDriftScore >= 3000 ? '💰 3000₽' :
+                   currentDriftScore >= 2000 ? '💰 1000₽' :
+                   currentDriftScore >= 1000 ? '💰 500₽' : 'Продолжай!'}
                 </div>
               </div>
             </Card>
-          </div>
+          )}
+
+          <Card className="p-4 bg-background/80 backdrop-blur border-2 neon-border-cyan">
+            <div className="font-roboto text-sm neon-text-purple text-center space-y-1">
+              <div className="flex justify-center gap-8">
+                <span>W/↑ - Газ</span>
+                <span>A/← D/→ - Поворот</span>
+                <span>S/↓ - Назад</span>
+                <span>SPACE - Тормоз</span>
+              </div>
+              <div className="font-orbitron text-xs neon-text-magenta">
+                {car?.name} • Награды: 1000 очков = 500₽ | 2000 = 1000₽ | 3000 = 3000₽
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="absolute bottom-1/3 left-1/2 transform -translate-x-1/2 z-5">
+          <Icon name="Car" size={80} className="neon-text-magenta" style={{ transform: `rotate(${carRotation}deg)` }} />
         </div>
       </div>
     );
@@ -849,16 +911,16 @@ const Index = () => {
           </div>
 
           <div className="pt-6 border-t border-primary space-y-4">
+            <div className="text-center font-roboto text-sm neon-text-purple space-y-1">
+              <div>Заработано всего: {totalEarnings}₽</div>
+              <div>Машин разблокировано: {cars.filter(c => c.unlocked).length}/{cars.length}</div>
+            </div>
             <Button 
               onClick={resetProgress}
               className="w-full neon-border-magenta border-2 font-orbitron"
             >
               <Icon name="RotateCcw" className="mr-2" />
               Сбросить прогресс
-            </Button>
-            <Button className="w-full neon-border-cyan border-2 font-orbitron">
-              <Icon name="Info" className="mr-2" />
-              О игре
             </Button>
           </div>
         </Card>
